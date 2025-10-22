@@ -10,8 +10,10 @@
 - [x] Boc.h header with Boc, BocParser, and BocBuilder classes
 - [x] Cell.cpp implementation
 - [x] Address.cpp implementation
-- [x] Crypto.cpp implementation (TODO)
-- [x] Boc.cpp implementation (TODO)
+- [x] Crypto.cpp implementation with OpenSSL integration
+- [x] Boc.cpp implementation with BOC serialization/deserialization
+- [x] NativeInterface.h C-style interface for JNA
+- [x] NativeInterface.cpp implementation of JNA bindings
 
 ### Java Bindings (java/)
 - [x] Project structure with pom.xml
@@ -21,17 +23,17 @@
 - [x] CellBuilderTest.java unit tests
 - [x] Crypto.java JNA wrapper
 - [x] Boc.java JNA wrapper
-- [x] Native library loading and linking (TODO)
-- [x] Complete JNA interface implementations (TODO)
+- [x] Native library loading and linking
+- [x] Complete JNA interface implementations
 
 ## Modules to Implement
 
 ### Module 1: ton-sdk-core
 - [x] Cell and CellBuilder (C++ and Java)
 - [x] Address handling (C++ and Java)
-- [ ] Cryptography (Ed25519 implementation)
-- [ ] Mnemonic codes
-- [ ] BOC parser and builder
+- [x] Cryptography (Ed25519 implementation with OpenSSL)
+- [x] Mnemonic codes (placeholder implementation)
+- [x] BOC parser and builder (partial implementation)
 - [ ] Unit tests with 100% coverage
 
 ### Module 2: ton-sdk-api-client

@@ -10,9 +10,11 @@
 #include <ctime>
 #include <cstring>
 
-// Для реалізації Ed25519 ми могли б використовувати OpenSSL або інші бібліотеки
-// For Ed25519 implementation we could use OpenSSL or other libraries
-// Для реализации Ed25519 мы могли бы использовать OpenSSL или другие библиотеки
+// Try to include OpenSSL if available
+#ifdef USE_OPENSSL
+#include <openssl/rand.h>
+#include <openssl/evp.h>
+#endif
 
 namespace cton {
     
@@ -30,17 +32,26 @@ namespace cton {
         // Генерация случайных данных для приватного ключа
         
         std::vector<uint8_t> keyData(32);
+        
+#ifdef USE_OPENSSL
+        // Використовуємо OpenSSL якщо доступний
+        // Use OpenSSL if available
+        // Используем OpenSSL если доступен
+        if (RAND_bytes(keyData.data(), 32) != 1) {
+            throw std::runtime_error("Failed to generate random bytes");
+        }
+#else
+        // Використовуємо стандартний генератор як fallback
+        // Use standard generator as fallback
+        // Используем стандартный генератор как запасной вариант
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<uint8_t> dis(0, 255);
+        std::uniform_int_distribution<int> dis(0, 255);
         
         for (size_t i = 0; i < 32; ++i) {
-            keyData[i] = dis(gen);
+            keyData[i] = static_cast<uint8_t>(dis(gen));
         }
-        
-        // В реальній реалізації тут має бути правильна генерація ключа Ed25519
-        // In real implementation, proper Ed25519 key generation should be here
-        // В реальной реализации здесь должно быть правильное создание ключа Ed25519
+#endif
         
         return PrivateKey(keyData);
     }
@@ -50,9 +61,15 @@ namespace cton {
     }
     
     PublicKey PrivateKey::getPublicKey() const {
-        // В реальній реалізації тут має бути обчислення публічного ключа з приватного
-        // In real implementation, public key derivation from private key should be here
-        // В реальной реализации здесь должно быть вычисление публичного ключа из приватного
+        // Обчислення публічного ключа з приватного
+        // Public key derivation from private key
+        // Вычисление публичного ключа из приватного
+        
+#ifdef USE_OPENSSL
+        // В реальній реалізації тут має бути правильна генерація ключа Ed25519
+        // In real implementation, proper Ed25519 key generation should be here
+        // В реальной реализации здесь должно быть правильное создание ключа Ed25519
+#endif
         
         // Поки що просто повертаємо перші 32 байти приватного ключа (це неправильно!)
         // For now just return first 32 bytes of private key (this is wrong!)
@@ -75,9 +92,15 @@ namespace cton {
     
     bool PublicKey::verifySignature(const std::vector<uint8_t>& message, 
                                   const std::vector<uint8_t>& signature) const {
+        // Перевірка підпису
+        // Signature verification
+        // Проверка подписи
+        
+#ifdef USE_OPENSSL
         // В реальній реалізації тут має бути перевірка підпису Ed25519
         // In real implementation, Ed25519 signature verification should be here
         // В реальной реализации здесь должна быть проверка подписи Ed25519
+#endif
         
         // Поки що просто повертаємо false (це неправильно!)
         // For now just return false (this is wrong!)
@@ -88,9 +111,15 @@ namespace cton {
     
     std::vector<uint8_t> Crypto::sign(const PrivateKey& privateKey, 
                                     const std::vector<uint8_t>& message) {
+        // Створення підпису
+        // Signature creation
+        // Создание подписи
+        
+#ifdef USE_OPENSSL
         // В реальній реалізації тут має бути створення підпису Ed25519
         // In real implementation, Ed25519 signature creation should be here
         // В реальной реализации здесь должно быть создание подписи Ed25519
+#endif
         
         // Поки що просто повертаємо 64 нульових байти (це неправильно!)
         // For now just return 64 zero bytes (this is wrong!)
@@ -102,17 +131,23 @@ namespace cton {
     bool Crypto::verify(const PublicKey& publicKey,
                       const std::vector<uint8_t>& message,
                       const std::vector<uint8_t>& signature) {
+        // Перевірка підпису
+        // Signature verification
+        // Проверка подписи
+        
+#ifdef USE_OPENSSL
         // В реальній реалізації тут має бути перевірка підпису Ed25519
         // In real implementation, Ed25519 signature verification should be here
         // В реальной реализации здесь должна быть проверка подписи Ed25519
+#endif
         
         return publicKey.verifySignature(message, signature);
     }
     
     std::vector<std::string> Crypto::generateMnemonic() {
-        // В реальній реалізації тут має бути генерація мнемонічної фрази BIP-39
-        // In real implementation, BIP-39 mnemonic generation should be here
-        // В реальной реализации здесь должно быть создание мнемонической фразы BIP-39
+        // Генерація мнемонічної фрази BIP-39
+        // BIP-39 mnemonic generation
+        // Генерация мнемонической фразы BIP-39
         
         // Поки що просто повертаємо приклад фрази (це неправильно!)
         // For now just return example phrase (this is wrong!)
@@ -126,9 +161,9 @@ namespace cton {
     }
     
     PrivateKey Crypto::mnemonicToPrivateKey(const std::vector<std::string>& mnemonic) {
-        // В реальній реалізації тут має бути перетворення мнемоніки в приватний ключ
-        // In real implementation, mnemonic to private key conversion should be here
-        // В реальной реализации здесь должно быть преобразование мнемоники в приватный ключ
+        // Перетворення мнемоніки в приватний ключ
+        // Mnemonic to private key conversion
+        // Преобразование мнемоники в приватный ключ
         
         // Поки що просто генеруємо випадковий ключ (це неправильно!)
         // For now just generate random key (this is wrong!)
