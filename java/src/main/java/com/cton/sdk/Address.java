@@ -6,6 +6,7 @@ package com.cton.sdk;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.Memory;
 import com.sun.jna.ptr.PointerByReference;
 
 /**
@@ -43,15 +44,33 @@ public class Address {
         
         // Перевірка валідності адреси
         boolean address_is_valid(Pointer address);
+        
+        // Встановлення workchain
+        void address_set_workchain(Pointer address, byte workchain);
+        
+        // Встановлення hash part
+        void address_set_hash_part(Pointer address, byte[] hashPart);
     }
     
-    private Pointer nativeAddress;
+    // Зробимо поле доступним для інших класів в тому самому пакеті
+    // Make field accessible to other classes in the same package
+    // Сделаем поле доступным для других классов в том же пакете
+    Pointer nativeAddress;
     
     /**
      * Конструктор за замовчуванням
      */
     public Address() {
         this.nativeAddress = CtonLibrary.INSTANCE.address_create();
+    }
+    
+    /**
+     * Конструктор для внутрішнього використання (для інших класів в тому самому пакеті)
+     * Constructor for internal use (for other classes in the same package)
+     * Конструктор для внутреннего использования (для других классов в том же пакете)
+     */
+    Address(Pointer nativeAddress) {
+        this.nativeAddress = nativeAddress;
     }
     
     /**
@@ -74,6 +93,14 @@ public class Address {
     }
     
     /**
+     * Встановити робочий ланцюг
+     * @param workchain робочий ланцюг
+     */
+    public void setWorkchain(byte workchain) {
+        CtonLibrary.INSTANCE.address_set_workchain(nativeAddress, workchain);
+    }
+    
+    /**
      * Отримати хеш-частину адреси
      * @return хеш-частина (32 байти)
      */
@@ -81,6 +108,17 @@ public class Address {
         byte[] hashPart = new byte[32];
         CtonLibrary.INSTANCE.address_get_hash_part(nativeAddress, hashPart);
         return hashPart;
+    }
+    
+    /**
+     * Встановити хеш-частину адреси
+     * @param hashPart хеш-частина (32 байти)
+     */
+    public void setHashPart(byte[] hashPart) {
+        if (hashPart.length != 32) {
+            throw new IllegalArgumentException("Hash part must be exactly 32 bytes");
+        }
+        CtonLibrary.INSTANCE.address_set_hash_part(nativeAddress, hashPart);
     }
     
     /**

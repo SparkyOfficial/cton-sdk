@@ -47,9 +47,18 @@ public class Cell {
         
         // Отримання розміру даних в бітах
         int cell_get_bit_size(Pointer cell);
+        
+        // Отримання кількості референсів
+        int cell_get_refs_count(Pointer cell);
+        
+        // Отримання референсу за індексом
+        Pointer cell_get_ref(Pointer cell, int index);
     }
     
-    private Pointer nativeCell;
+    // Зробимо поле доступним для інших класів в тому самому пакеті
+    // Make field accessible to other classes in the same package
+    // Сделаем поле доступным для других классов в том же пакете
+    Pointer nativeCell;
     
     /**
      * Конструктор за замовчуванням
@@ -59,9 +68,11 @@ public class Cell {
     }
     
     /**
-     * Приватний конструктор для внутрішнього використання
+     * Конструктор для внутрішнього використання (для інших класів в тому самому пакеті)
+     * Constructor for internal use (for other classes in the same package)
+     * Конструктор для внутреннего использования (для других классов в том же пакете)
      */
-    private Cell(Pointer nativeCell) {
+    Cell(Pointer nativeCell) {
         this.nativeCell = nativeCell;
     }
     
@@ -144,6 +155,27 @@ public class Cell {
      */
     public int getBitSize() {
         return CtonLibrary.INSTANCE.cell_get_bit_size(nativeCell);
+    }
+    
+    /**
+     * Отримати кількість референсів
+     * @return кількість референсів
+     */
+    public int getRefsCount() {
+        return CtonLibrary.INSTANCE.cell_get_refs_count(nativeCell);
+    }
+    
+    /**
+     * Отримати референс за індексом
+     * @param index індекс референсу
+     * @return комірка-референс
+     */
+    public Cell getRef(int index) {
+        Pointer refPtr = CtonLibrary.INSTANCE.cell_get_ref(nativeCell, index);
+        if (refPtr == null) {
+            return null;
+        }
+        return new Cell(refPtr);
     }
     
     /**

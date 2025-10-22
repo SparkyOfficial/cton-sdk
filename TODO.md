@@ -10,8 +10,8 @@
 - [x] Boc.h header with Boc, BocParser, and BocBuilder classes
 - [x] Cell.cpp implementation
 - [x] Address.cpp implementation
-- [ ] Crypto.cpp implementation (TODO)
-- [ ] Boc.cpp implementation (TODO)
+- [x] Crypto.cpp implementation (TODO)
+- [x] Boc.cpp implementation (TODO)
 
 ### Java Bindings (java/)
 - [x] Project structure with pom.xml
@@ -19,8 +19,10 @@
 - [x] Address.java JNA wrapper
 - [x] CellBuilder.java fluent API
 - [x] CellBuilderTest.java unit tests
-- [ ] Native library loading and linking (TODO)
-- [ ] Complete JNA interface implementations (TODO)
+- [x] Crypto.java JNA wrapper
+- [x] Boc.java JNA wrapper
+- [x] Native library loading and linking (TODO)
+- [x] Complete JNA interface implementations (TODO)
 
 ## Modules to Implement
 
