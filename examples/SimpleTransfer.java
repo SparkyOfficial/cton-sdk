@@ -14,8 +14,6 @@
 // import com.cton.sdk.CellBuilder;
 // import com.cton.sdk.Address;
 
-import java.math.BigInteger;
-
 /**
  * Приклад простого переказу TON монет
  * 

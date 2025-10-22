@@ -1,0 +1,108 @@
+# Build output directories
+cpp/build/
+cpp/cmake-build*/
+java/target/
+java/bin/
+java/libs/
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*.swn
+
+# OS generated files
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# Compiled C++ files
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+*.lib
+*.a
+
+# Java compiled files
+*.class
+*.jar
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Native library builds
+*.dll
+*.so
+*.dylib
+
+# Log files
+*.log
+
+# Temporary files
+*.tmp
+*.temp
+
+# Documentation build output (if any)
+docs/_build/
+docs/_static/
+docs/_templates/
+
+# Gradle (in case we add Gradle support later)
+.gradle/
+build/
+
+# Eclipse
+.settings/
+.project
+.classpath
+
+# IntelliJ IDEA
+*.iml
+*.iws
+out/
+
+# Visual Studio
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.user
+*.suo
+*.opensdf
+*.sdf
+*.tlog
+*.ipch
+*.aps
+*.pch
+*.idb
+*.pdb
+*.ilk
+*.obj
+*.res
+*.rsc
+*.tlb
+*.tlh
+*.bak
+*.cache
+*.ilk
+*.meta
+*.opt
+*.plg
+*.rc
+*.sbr
+*.tlog
+*.vssscc
+*.vspscc
+*.vshost.*
+_ReSharper*/
+*.ReSharper
