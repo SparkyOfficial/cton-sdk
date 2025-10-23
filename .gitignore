@@ -1,9 +1,9 @@
 # Build output directories
 cpp/build/
 cpp/cmake-build*/
-java/target/
-java/bin/
-java/libs/
+*/target/
+*/bin/
+*/libs/
 
 # IDE files
 .idea/
