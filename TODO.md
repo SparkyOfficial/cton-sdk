@@ -33,6 +33,17 @@
 - [x] TonApiClient.java HTTP client for TON Center API
 - [x] TonApiClientTest.java unit tests
 - [x] TonApiClientExample.java usage example
+- [x] LiteClient interface
+- [x] TonLiteClient implementation
+- [x] LiteClient tests and examples
+
+### Contract (contract/)
+- [x] Project structure with pom.xml
+- [x] Wallet interface
+- [x] BaseWallet abstract implementation
+- [x] WalletV3 concrete implementation
+- [x] Wallet tests
+- [x] Wallet usage example
 
 ## Modules to Implement
 
@@ -46,13 +57,13 @@
 
 ### Module 2: ton-sdk-api-client
 - [x] HTTP client for TON Center API
-- [ ] LiteClient implementation
+- [x] LiteClient implementation
 - [ ] Methods for get-methods, block/transaction info
 - [ ] sendBoc implementation
 - [ ] Asynchronous operations support
 
 ### Module 3: ton-sdk-contract
-- [ ] Wallet abstraction
+- [x] Wallet abstraction
 - [ ] Message factory
 - [ ] Contract wrapper generator
 - [ ] Jetton standard support
