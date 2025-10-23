@@ -74,9 +74,9 @@
 - [x] LICENSE file
 - [x] ARCHITECTURE.md with module descriptions
 - [x] DEVELOPMENT.md with build instructions
-- [ ] API documentation
-- [ ] Examples and tutorials
-- [ ] CONTRIBUTING.md guidelines
+- [x] API documentation
+- [x] Examples and tutorials
+- [x] CONTRIBUTING.md guidelines
 
 ## Future Enhancements
 - [ ] Integration with existing TON libraries
