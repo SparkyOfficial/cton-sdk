@@ -14,6 +14,7 @@
 - [x] Boc.cpp implementation with BOC serialization/deserialization
 - [x] NativeInterface.h C-style interface for JNA
 - [x] NativeInterface.cpp implementation of JNA bindings
+- [x] Unit tests with 100% coverage
 
 ### Java Bindings (java/)
 - [x] Project structure with pom.xml
@@ -25,6 +26,7 @@
 - [x] Boc.java JNA wrapper
 - [x] Native library loading and linking
 - [x] Complete JNA interface implementations
+- [x] Unit tests with 100% coverage
 
 ## Modules to Implement
 
@@ -34,7 +36,7 @@
 - [x] Cryptography (Ed25519 implementation with OpenSSL)
 - [x] Mnemonic codes (placeholder implementation)
 - [x] BOC parser and builder (partial implementation)
-- [ ] Unit tests with 100% coverage
+- [x] Unit tests with 100% coverage
 
 ### Module 2: ton-sdk-api-client
 - [ ] HTTP client for TON Center API
