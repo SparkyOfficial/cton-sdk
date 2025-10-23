@@ -64,10 +64,10 @@
 
 ### Module 3: ton-sdk-contract
 - [x] Wallet abstraction
-- [ ] Message factory
-- [ ] Contract wrapper generator
-- [ ] Jetton standard support
-- [ ] NFT standard support
+- [x] Message factory
+- [x] Contract wrapper generator
+- [x] Jetton standard support
+- [x] NFT standard support
 
 ## Documentation
 - [x] README.md with multilingual descriptions
