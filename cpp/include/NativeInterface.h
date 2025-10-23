@@ -8,65 +8,76 @@
 
 #include <cstdint>
 
+// Export directives for Windows DLL
+#ifdef _WIN32
+    #ifdef CTON_SDK_CORE_EXPORTS
+        #define CTON_SDK_API __declspec(dllexport)
+    #else
+        #define CTON_SDK_API __declspec(dllimport)
+    #endif
+#else
+    #define CTON_SDK_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 // Cell functions
-void* cell_create();
-void cell_destroy(void* cell);
-bool cell_store_uint(void* cell, int bits, uint64_t value);
-bool cell_store_int(void* cell, int bits, int64_t value);
-bool cell_store_bytes(void* cell, const uint8_t* data, int length);
-bool cell_store_ref(void* cell, void* refCell);
-int cell_get_data(void* cell, uint8_t* buffer, int bufferSize);
-int cell_get_bit_size(void* cell);
-int cell_get_refs_count(void* cell);
-void* cell_get_ref(void* cell, int index);
+CTON_SDK_API void* cell_create();
+CTON_SDK_API void cell_destroy(void* cell);
+CTON_SDK_API bool cell_store_uint(void* cell, int bits, uint64_t value);
+CTON_SDK_API bool cell_store_int(void* cell, int bits, int64_t value);
+CTON_SDK_API bool cell_store_bytes(void* cell, const uint8_t* data, int length);
+CTON_SDK_API bool cell_store_ref(void* cell, void* refCell);
+CTON_SDK_API int cell_get_data(void* cell, uint8_t* buffer, int bufferSize);
+CTON_SDK_API int cell_get_bit_size(void* cell);
+CTON_SDK_API int cell_get_refs_count(void* cell);
+CTON_SDK_API void* cell_get_ref(void* cell, int index);
 
 // Address functions
-void* address_create();
-void* address_create_from_string(const char* addressStr);
-void address_destroy(void* address);
-int8_t address_get_workchain(void* address);
-void address_get_hash_part(void* address, uint8_t* hashPart);
-char* address_to_raw(void* address);
-char* address_to_user_friendly(void* address, bool isBounceable, bool isTestOnly);
-bool address_is_valid(void* address);
-void address_set_workchain(void* address, int8_t workchain);
-void address_set_hash_part(void* address, const uint8_t* hashPart);
+CTON_SDK_API void* address_create();
+CTON_SDK_API void* address_create_from_string(const char* addressStr);
+CTON_SDK_API void address_destroy(void* address);
+CTON_SDK_API int8_t address_get_workchain(void* address);
+CTON_SDK_API void address_get_hash_part(void* address, uint8_t* hashPart);
+CTON_SDK_API char* address_to_raw(void* address);
+CTON_SDK_API char* address_to_user_friendly(void* address, bool isBounceable, bool isTestOnly);
+CTON_SDK_API bool address_is_valid(void* address);
+CTON_SDK_API void address_set_workchain(void* address, int8_t workchain);
+CTON_SDK_API void address_set_hash_part(void* address, const uint8_t* hashPart);
 
 // Private key functions
-void* private_key_create();
-void* private_key_create_from_data(const uint8_t* keyData, int length);
-void private_key_destroy(void* privateKey);
-void* private_key_generate();
-int private_key_get_data(void* privateKey, uint8_t* buffer, int bufferSize);
-void* private_key_get_public_key(void* privateKey);
+CTON_SDK_API void* private_key_create();
+CTON_SDK_API void* private_key_create_from_data(const uint8_t* keyData, int length);
+CTON_SDK_API void private_key_destroy(void* privateKey);
+CTON_SDK_API void* private_key_generate();
+CTON_SDK_API int private_key_get_data(void* privateKey, uint8_t* buffer, int bufferSize);
+CTON_SDK_API void* private_key_get_public_key(void* privateKey);
 
 // Public key functions
-void* public_key_create();
-void* public_key_create_from_data(const uint8_t* keyData, int length);
-void public_key_destroy(void* publicKey);
-int public_key_get_data(void* publicKey, uint8_t* buffer, int bufferSize);
-bool public_key_verify_signature(void* publicKey, const uint8_t* message, int messageLen, 
+CTON_SDK_API void* public_key_create();
+CTON_SDK_API void* public_key_create_from_data(const uint8_t* keyData, int length);
+CTON_SDK_API void public_key_destroy(void* publicKey);
+CTON_SDK_API int public_key_get_data(void* publicKey, uint8_t* buffer, int bufferSize);
+CTON_SDK_API bool public_key_verify_signature(void* publicKey, const uint8_t* message, int messageLen, 
                                 const uint8_t* signature, int signatureLen);
 
 // Crypto functions
-void* crypto_sign(void* privateKey, const uint8_t* message, int messageLen);
-bool crypto_verify(void* publicKey, const uint8_t* message, int messageLen, 
+CTON_SDK_API void* crypto_sign(void* privateKey, const uint8_t* message, int messageLen);
+CTON_SDK_API bool crypto_verify(void* publicKey, const uint8_t* message, int messageLen, 
                   const uint8_t* signature, int signatureLen);
-char** crypto_generate_mnemonic();
-void* crypto_mnemonic_to_private_key(char** mnemonic);
+CTON_SDK_API char** crypto_generate_mnemonic();
+CTON_SDK_API void* crypto_mnemonic_to_private_key(char** mnemonic);
 
 // BOC functions
-void* boc_create();
-void* boc_create_with_root(void* rootCell);
-void boc_destroy(void* boc);
-void* boc_serialize(void* boc, bool hasIdx, bool hashCRC);
-void* boc_deserialize(const uint8_t* data, int length);
-void* boc_get_root(void* boc);
-void boc_set_root(void* boc, void* rootCell);
+CTON_SDK_API void* boc_create();
+CTON_SDK_API void* boc_create_with_root(void* rootCell);
+CTON_SDK_API void boc_destroy(void* boc);
+CTON_SDK_API void* boc_serialize(void* boc, bool hasIdx, bool hashCRC);
+CTON_SDK_API void* boc_deserialize(const uint8_t* data, int length);
+CTON_SDK_API void* boc_get_root(void* boc);
+CTON_SDK_API void boc_set_root(void* boc, void* rootCell);
 
 #ifdef __cplusplus
 }

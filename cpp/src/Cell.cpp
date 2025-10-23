@@ -31,6 +31,51 @@ namespace cton {
         return special_;
     }
     
+    bool Cell::storeUInt(size_t bits, uint64_t value) {
+        try {
+            CellBuilder builder;
+            builder.storeUInt(bits, value);
+            auto builtCell = builder.build();
+            
+            // Copy data from built cell to this cell
+            data_ = builtCell->data_;
+            bitSize_ = builtCell->bitSize_;
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+    
+    bool Cell::storeInt(size_t bits, int64_t value) {
+        try {
+            CellBuilder builder;
+            builder.storeInt(bits, value);
+            auto builtCell = builder.build();
+            
+            // Copy data from built cell to this cell
+            data_ = builtCell->data_;
+            bitSize_ = builtCell->bitSize_;
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+    
+    bool Cell::storeBytes(const std::vector<uint8_t>& data) {
+        try {
+            CellBuilder builder;
+            builder.storeBytes(data);
+            auto builtCell = builder.build();
+            
+            // Copy data from built cell to this cell
+            data_ = builtCell->data_;
+            bitSize_ = builtCell->bitSize_;
+            return true;
+        } catch (...) {
+            return false;
+        }
+    }
+    
     CellBuilder::CellBuilder() : bitOffset_(0) {}
     
     CellBuilder& CellBuilder::storeUInt(size_t bits, uint64_t value) {
@@ -158,7 +203,8 @@ namespace cton {
             weakRefs.push_back(ref);
         }
         
-        // Створення комірки
-        return std::make_shared<Cell>(buffer_, bitOffset_, weakRefs, false);
+        // Створення комірки через new і shared_ptr
+        // This approach avoids the private constructor issue with make_shared
+        return std::shared_ptr<Cell>(new Cell(buffer_, bitOffset_, weakRefs, false));
     }
 }

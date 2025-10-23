@@ -64,6 +64,11 @@ namespace cton {
          */
         bool isSpecial() const;
         
+        // Додано методи для інтерфейсу
+        bool storeUInt(size_t bits, uint64_t value);
+        bool storeInt(size_t bits, int64_t value);
+        bool storeBytes(const std::vector<uint8_t>& data);
+        
     private:
         // Дані комірки
         std::vector<uint8_t> data_;

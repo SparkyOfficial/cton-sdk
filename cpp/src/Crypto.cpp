@@ -12,8 +12,18 @@
 
 // Try to include OpenSSL if available
 #ifdef USE_OPENSSL
+// Check if OpenSSL headers are actually available
+#if __has_include(<openssl/rand.h>) && __has_include(<openssl/evp.h>)
 #include <openssl/rand.h>
 #include <openssl/evp.h>
+#define OPENSSL_AVAILABLE 1
+#else
+#define OPENSSL_AVAILABLE 0
+#endif
+#endif
+
+#ifndef USE_OPENSSL
+#define OPENSSL_AVAILABLE 0
 #endif
 
 namespace cton {
@@ -33,7 +43,7 @@ namespace cton {
         
         std::vector<uint8_t> keyData(32);
         
-#ifdef USE_OPENSSL
+#if OPENSSL_AVAILABLE
         // Використовуємо OpenSSL якщо доступний
         // Use OpenSSL if available
         // Используем OpenSSL если доступен
@@ -65,7 +75,7 @@ namespace cton {
         // Public key derivation from private key
         // Вычисление публичного ключа из приватного
         
-#ifdef USE_OPENSSL
+#if OPENSSL_AVAILABLE
         // В реальній реалізації тут має бути правильна генерація ключа Ed25519
         // In real implementation, proper Ed25519 key generation should be here
         // В реальной реализации здесь должно быть правильное создание ключа Ed25519
@@ -96,7 +106,7 @@ namespace cton {
         // Signature verification
         // Проверка подписи
         
-#ifdef USE_OPENSSL
+#if OPENSSL_AVAILABLE
         // В реальній реалізації тут має бути перевірка підпису Ed25519
         // In real implementation, Ed25519 signature verification should be here
         // В реальной реализации здесь должна быть проверка подписи Ed25519
@@ -115,7 +125,7 @@ namespace cton {
         // Signature creation
         // Создание подписи
         
-#ifdef USE_OPENSSL
+#if OPENSSL_AVAILABLE
         // В реальній реалізації тут має бути створення підпису Ed25519
         // In real implementation, Ed25519 signature creation should be here
         // В реальной реализации здесь должно быть создание подписи Ed25519
@@ -135,7 +145,7 @@ namespace cton {
         // Signature verification
         // Проверка подписи
         
-#ifdef USE_OPENSSL
+#if OPENSSL_AVAILABLE
         // В реальній реалізації тут має бути перевірка підпису Ed25519
         // In real implementation, Ed25519 signature verification should be here
         // В реальной реализации здесь должна быть проверка подписи Ed25519
