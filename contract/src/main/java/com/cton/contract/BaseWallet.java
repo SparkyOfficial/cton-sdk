@@ -45,7 +45,7 @@ public abstract class BaseWallet implements Wallet {
         // Отримуємо інформацію про адресу через API
         // Получаем информацию об адресе через API
         // Get address information through API
-        JsonObject addressInfo = apiClient.getAddressInformation(address);
+        JsonObject addressInfo = apiClient.getAddressInformation(address.toRaw());
         
         // Перевіряємо чи запит був успішним
         // Проверяем, был ли запрос успешным
@@ -139,7 +139,7 @@ public abstract class BaseWallet implements Wallet {
         // Выполняем get-метод seqno
         // Execute seqno get-method
         JsonObject stack = new JsonObject();
-        JsonObject result = apiClient.getAddressInformation(address);
+        JsonObject result = apiClient.getAddressInformation(address.toRaw());
         
         // В реальній реалізації тут має бути виклик get-методу контракту
         // В реальной реализации здесь должен быть вызов get-метода контракта

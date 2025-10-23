@@ -6,7 +6,6 @@
 package com.cton.api.example;
 
 import com.cton.api.TonApiClient;
-import com.cton.sdk.Address;
 import com.google.gson.JsonObject;
 import java.io.IOException;
 
@@ -25,7 +24,7 @@ public class TonApiClientExample {
             // Отримуємо інформацію про адресу
             // Получаем информацию об адресе
             // Get information about address
-            Address address = new Address("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
+            String address = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N"; // Example address in raw format
             JsonObject addressInfo = client.getAddressInformation(address);
             
             System.out.println("Address information:");

@@ -5,7 +5,6 @@
 
 package com.cton.api;
 
-import com.cton.sdk.Address;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
 import static org.junit.jupiter.api.Assertions.*;
@@ -45,7 +44,7 @@ public class TonApiClientTest {
     @Test
     public void testBytesToBase64() {
         // Цей тест не може бути виконаний напряму, оскільки bytesToBase64 є приватним
-        // Этот тест не может быть выполнен напрямую, так как bytesToBase64 является приватным
+        // Этот тест не может быть выполнен напряму, так как bytesToBase64 является приватным
         // This test cannot be executed directly since bytesToBase64 is private
         assertTrue(true); // Просто перевірка що все компілюється / Just check that everything compiles / Просто проверка что все компилируется
     }
@@ -71,7 +70,7 @@ public class TonApiClientTest {
         // Тест отримання інформації про адресу
         // Тест получения информации об адресе
         // Test getting address information
-        Address address = new Address("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
+        String address = "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N"; // Example address in raw format
         JsonObject result = client.getAddressInformation(address);
         assertNotNull(result);
         assertTrue(result.has("ok"));

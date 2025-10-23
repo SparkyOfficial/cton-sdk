@@ -58,9 +58,9 @@
 ### Module 2: ton-sdk-api-client
 - [x] HTTP client for TON Center API
 - [x] LiteClient implementation
-- [ ] Methods for get-methods, block/transaction info
-- [ ] sendBoc implementation
-- [ ] Asynchronous operations support
+- [x] Methods for get-methods, block/transaction info
+- [x] sendBoc implementation
+- [x] Asynchronous operations support
 
 ### Module 3: ton-sdk-contract
 - [x] Wallet abstraction
