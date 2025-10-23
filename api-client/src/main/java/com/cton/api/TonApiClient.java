@@ -12,6 +12,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonElement;
 import java.io.IOException;
+import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -142,8 +143,34 @@ public class TonApiClient {
         
         Request request = requestBuilder.build();
         
-ocBytes) {
-        return Base64.getEncoder().encodeToString(bocBytes);
+        // виконуємо запит
+        // выполняем запрос
+        // execute request
+        try (Response response = httpClient.newCall(request).execute()) {
+            if (!response.isSuccessful()) {
+                throw new IOException("Unexpected response code: " + response);
+            }
+            
+            ResponseBody body = response.body();
+            if (body == null) {
+                throw new IOException("Empty response body");
+            }
+            
+            // парсимо JSON відповідь
+            // парсим JSON ответ
+            // parse JSON response
+            String responseBody = body.string();
+            return JsonParser.parseString(responseBody).getAsJsonObject();
+        }
+    }
+    
+    /**
+     * Конвертує байти в Base64 строку
+     * @param bytes байти для конвертації
+     * @return Base64 строка
+     */
+    private String bytesToBase64(byte[] bytes) {
+        return Base64.getEncoder().encodeToString(bytes);
     }
     
     /**

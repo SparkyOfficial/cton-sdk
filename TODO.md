@@ -28,6 +28,12 @@
 - [x] Complete JNA interface implementations
 - [x] Unit tests with 100% coverage
 
+### API Client (api-client/)
+- [x] Project structure with pom.xml
+- [x] TonApiClient.java HTTP client for TON Center API
+- [x] TonApiClientTest.java unit tests
+- [x] TonApiClientExample.java usage example
+
 ## Modules to Implement
 
 ### Module 1: ton-sdk-core
@@ -39,7 +45,7 @@
 - [x] Unit tests with 100% coverage
 
 ### Module 2: ton-sdk-api-client
-- [ ] HTTP client for TON Center API
+- [x] HTTP client for TON Center API
 - [ ] LiteClient implementation
 - [ ] Methods for get-methods, block/transaction info
 - [ ] sendBoc implementation
