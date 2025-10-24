@@ -40,6 +40,9 @@ public class Boc implements Closeable {
         
         // Встановити кореневу комірку
         void boc_set_root(Pointer boc, Pointer rootCell);
+        
+        // Функція для звільнення пам'яті
+        void free_string(Pointer str);
     }
     
     private Pointer nativeBoc;

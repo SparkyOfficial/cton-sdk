@@ -10,8 +10,9 @@ set(CMAKE_CXX_STANDARD 17)
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h" "include/*.hpp")
 
-# Exclude main.cpp from library sources
+# Exclude main.cpp and test files from library sources
 list(FILTER SOURCES EXCLUDE REGEX "main.cpp")
+list(FILTER SOURCES EXCLUDE REGEX "test")
 
 # Create library
 add_library(cton-sdk-core SHARED ${SOURCES} ${HEADERS})
@@ -38,6 +39,22 @@ target_link_libraries(boc_test cton-sdk-core)
 
 add_executable(native_interface_test test/NativeInterfaceTest.cpp)
 target_link_libraries(native_interface_test cton-sdk-core)
+
+# Create comprehensive test executable
+add_executable(comprehensive_test test/ComprehensiveTest.cpp)
+target_link_libraries(comprehensive_test cton-sdk-core)
+
+# Create Ed25519 test executable
+add_executable(ed25519_test test/Ed25519Test.cpp)
+target_link_libraries(ed25519_test cton-sdk-core)
+
+# Create BOC compliance test executable
+add_executable(boc_compliance_test test/BocComplianceTest.cpp)
+target_link_libraries(boc_compliance_test cton-sdk-core)
+
+# Create final verification test executable
+add_executable(final_verification test/final_verification.cpp)
+target_link_libraries(final_verification cton-sdk-core)
 
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 
@@ -117,6 +134,26 @@ target_include_directories(boc_test PUBLIC
 )
 
 target_include_directories(native_interface_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(comprehensive_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(ed25519_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(boc_compliance_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(final_verification PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

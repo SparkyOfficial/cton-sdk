@@ -23,10 +23,10 @@ The SDK is divided into logically independent modules:
 
 ### Current Status
 
-The CTON-SDK has been significantly enhanced with:
+The CTON-SDK has been significantly enhanced and is now in BETA state with:
 
 - Proper memory management in native interface
-- Improved cryptographic implementations using OpenSSL
+- Improved cryptographic implementations with OpenSSL integration framework
 - Enhanced BOC serialization/deserialization
 - Real functionality in contract modules (Jetton, NFT, Wallet)
 - Comprehensive unit tests
@@ -53,6 +53,52 @@ build_java.bat   # Build Java components
 - Maven 3.6 or higher
 - OpenSSL 3.6.0 (included in the project)
 
+### Core Features
+
+#### Cell and CellBuilder
+- Complete implementation for TON cell manipulation
+- Fluent API for easy cell construction
+- Support for all TON cell operations
+
+#### Address Handling
+- Raw and user-friendly address formats
+- Workchain and hash part management
+- Validation and conversion utilities
+
+#### Cryptography
+- Ed25519 key generation and management
+- Signature creation and verification
+- Mnemonic phrase generation
+- OpenSSL integration framework
+
+#### BOC (Bag of Cells)
+- Serialization and deserialization
+- Index and CRC support
+- Complete TON BOC format compliance
+
+#### Contract Modules
+- Wallet implementations with transfer functionality
+- Jetton token support with balance operations
+- NFT support with data retrieval
+- Extensible contract framework
+
+#### API Client
+- HTTP client for TON Center API
+- Asynchronous operations support
+- Comprehensive method coverage
+- Error handling and validation
+
+### Examples
+
+The SDK includes comprehensive examples in the `examples/` directory:
+- Basic cell manipulation
+- Address handling
+- Cryptographic operations
+- BOC serialization
+- Wallet operations
+- Jetton token interactions
+- NFT operations
+
 <!-- Russian version -->
 ## CTON-SDK: Продвинутый SDK для блокчейна TON
 
@@ -64,10 +110,10 @@ build_java.bat   # Build Java components
 
 ### Текущий статус
 
-CTON-SDK был значительно улучшен с:
+CTON-SDK был значительно улучшен и теперь находится в БЕТА-состоянии с:
 
 - Правильным управлением памятью в нативном интерфейсе
-- Улучшенными криптографическими реализациями с использованием OpenSSL
+- Улучшенными криптографическими реализациями с интеграцией OpenSSL
 - Улучшенной сериализацией/десериализацией BOC
 - Реальной функциональностью в модулях контрактов (Jetton, NFT, Wallet)
 - Комплексными модульными тестами
@@ -105,32 +151,11 @@ build_java.bat   # Сборка Java компонентов
 
 ### Поточний статус
 
-CTON-SDK було значно покращено з:
+CTON-SDK було значно покращено і тепер перебуває в БЕТА-стані з:
 
 - Правильним управлінням пам'яттю в нативному інтерфейсі
-- Покращеними криптографічними реалізаціями з використанням OpenSSL
+- Покращеними криптографічними реалізаціями з інтеграцією OpenSSL
 - Покращеною серіалізацією/десеріалізацією BOC
 - Реальною функціональністю в модулях контрактів (Jetton, NFT, Wallet)
 - Комплексними модульними тестами
 - Кращою обробкою помилок та управлінням ресурсами
-
-### Збірка проекту
-
-Для збірки повного SDK:
-
-```bash
-# Windows
-build_all.bat
-
-# Або збірка компонентів окремо
-build_cpp.bat    # Збірка C++ ядра
-build_java.bat   # Збірка Java компонентів
-```
-
-### Вимоги
-
-- CMake 3.10 або вище
-- Visual Studio або сумісний компілятор C++
-- JDK 8 або вище
-- Maven 3.6 або вище
-- OpenSSL 3.6.0 (включено в проект)

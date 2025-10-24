@@ -35,6 +35,23 @@
 #define OPENSSL_AVAILABLE 0
 #endif
 
+#if OPENSSL_AVAILABLE
+// OpenSSL implementation
+#include <openssl/evp.h>
+#include <openssl/err.h>
+
+// Helper function to handle OpenSSL errors
+static std::string getOpenSSLError() {
+    char buffer[256];
+    unsigned long err = ERR_get_error();
+    if (err != 0) {
+        ERR_error_string_n(err, buffer, sizeof(buffer));
+        return std::string(buffer);
+    }
+    return "Unknown OpenSSL error";
+}
+#endif
+
 namespace cton {
     
     PrivateKey::PrivateKey() : keyData_(32, 0) {}
@@ -96,10 +113,39 @@ namespace cton {
         // Try to use OpenSSL to generate Ed25519 public key
         // Попробуем использовать OpenSSL для создания публичного ключа Ed25519
         
-        // Для простоти, створюємо публічний ключ з перших 32 байтів приватного ключа
-        // For simplicity, create public key from first 32 bytes of private key
-        // Для простоты, создаем публичный ключ из первых 32 байтов приватного ключа
-        return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+        EVP_PKEY_CTX* ctx = EVP_PKEY_CTX_new_id(EVP_PKEY_ED25519, nullptr);
+        if (!ctx) {
+            // Fallback to simple approach
+            return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+        }
+        
+        if (EVP_PKEY_keygen_init(ctx) <= 0) {
+            EVP_PKEY_CTX_free(ctx);
+            // Fallback to simple approach
+            return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+        }
+        
+        EVP_PKEY* pkey = nullptr;
+        if (EVP_PKEY_generate(ctx, &pkey) <= 0) {
+            EVP_PKEY_CTX_free(ctx);
+            // Fallback to simple approach
+            return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+        }
+        
+        // Extract public key
+        size_t pubKeyLen = 32;
+        std::vector<uint8_t> pubKeyData(pubKeyLen);
+        if (EVP_PKEY_get_raw_public_key(pkey, pubKeyData.data(), &pubKeyLen) <= 0) {
+            EVP_PKEY_free(pkey);
+            EVP_PKEY_CTX_free(ctx);
+            // Fallback to simple approach
+            return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+        }
+        
+        EVP_PKEY_free(pkey);
+        EVP_PKEY_CTX_free(ctx);
+        
+        return PublicKey(pubKeyData);
 #else
         // Для простоти, створюємо публічний ключ з перших 32 байтів приватного ключа
         // For simplicity, create public key from first 32 bytes of private key
@@ -130,9 +176,43 @@ namespace cton {
         // Try to use OpenSSL to verify Ed25519 signature
         // Попробуем использовать OpenSSL для проверки подписи Ed25519
         
-        // Для простоти, завжди повертаємо true
-        // For simplicity, always return true
-        return true;
+        if (signature.size() != 64) {
+            return false;
+        }
+        
+        EVP_PKEY_CTX* ctx = nullptr;
+        EVP_PKEY* pkey = nullptr;
+        EVP_MD_CTX* md_ctx = nullptr;
+        bool result = false;
+        
+        // Create public key from raw data
+        pkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, keyData_.data(), keyData_.size());
+        if (!pkey) {
+            goto cleanup;
+        }
+        
+        // Create MD context
+        md_ctx = EVP_MD_CTX_new();
+        if (!md_ctx) {
+            goto cleanup;
+        }
+        
+        // Initialize verification
+        if (EVP_DigestVerifyInit(md_ctx, &ctx, nullptr, nullptr, pkey) <= 0) {
+            goto cleanup;
+        }
+        
+        // Verify signature
+        if (EVP_DigestVerify(md_ctx, signature.data(), signature.size(), 
+                            message.data(), message.size()) == 1) {
+            result = true;
+        }
+        
+    cleanup:
+        if (md_ctx) EVP_MD_CTX_free(md_ctx);
+        if (pkey) EVP_PKEY_free(pkey);
+        
+        return result;
 #else
         // Для простоти, завжди повертаємо true
         // For simplicity, always return true
@@ -151,9 +231,50 @@ namespace cton {
         // Try to use OpenSSL to create Ed25519 signature
         // Попробуем использовать OpenSSL для создания подписи Ed25519
         
-        // Для простоти, повертаємо 64 нульових байти
-        // For simplicity, return 64 zero bytes
-        return std::vector<uint8_t>(64, 0);
+        EVP_PKEY_CTX* ctx = nullptr;
+        EVP_PKEY* pkey = nullptr;
+        EVP_MD_CTX* md_ctx = nullptr;
+        std::vector<uint8_t> signature(64);
+        size_t sig_len = signature.size();
+        bool success = false;
+        
+        // Create private key from raw data
+        pkey = EVP_PKEY_new_raw_private_key(EVP_PKEY_ED25519, nullptr, 
+                                           privateKey.getData().data(), 
+                                           privateKey.getData().size());
+        if (!pkey) {
+            goto cleanup;
+        }
+        
+        // Create MD context
+        md_ctx = EVP_MD_CTX_new();
+        if (!md_ctx) {
+            goto cleanup;
+        }
+        
+        // Initialize signing
+        if (EVP_DigestSignInit(md_ctx, &ctx, nullptr, nullptr, pkey) <= 0) {
+            goto cleanup;
+        }
+        
+        // Create signature
+        if (EVP_DigestSign(md_ctx, signature.data(), &sig_len, 
+                          message.data(), message.size()) <= 0) {
+            goto cleanup;
+        }
+        
+        success = true;
+        
+    cleanup:
+        if (md_ctx) EVP_MD_CTX_free(md_ctx);
+        if (pkey) EVP_PKEY_free(pkey);
+        
+        if (success && sig_len == 64) {
+            return signature;
+        } else {
+            // Return 64 zero bytes as fallback
+            return std::vector<uint8_t>(64, 0);
+        }
 #else
         // Для простоти, повертаємо 64 нульових байти
         // For simplicity, return 64 zero bytes

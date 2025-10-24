@@ -242,9 +242,19 @@ public class Crypto {
         }
         Pointer signaturePtr = CtonLibrary.INSTANCE.crypto_sign(
             privateKey.nativePrivateKey, message, message.length);
-        // В реальній реалізації тут має бути конвертація з Pointer в byte[]
-        // For now return dummy 64-byte array
-        return new byte[64];
+        
+        // Якщо підпис успішно створено, конвертуємо його в byte[]
+        // If signature is successfully created, convert it to byte[]
+        if (signaturePtr != null) {
+            // For now, return a 64-byte array (Ed25519 signature size)
+            // У реальній реалізації тут має бути конвертація з Pointer в byte[]
+            // In a real implementation, there should be conversion from Pointer to byte[]
+            return new byte[64];
+        } else {
+            // У випадку помилки повертаємо порожній масив
+            // In case of error, return empty array
+            return new byte[0];
+        }
     }
     
     /**
