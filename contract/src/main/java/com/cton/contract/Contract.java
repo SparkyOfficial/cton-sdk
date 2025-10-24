@@ -1,14 +1,13 @@
 package com.cton.contract;
 
+import java.io.IOException;
+import java.util.Arrays;
+
+import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
 import com.cton.sdk.Cell;
 import com.cton.sdk.Crypto;
-import com.cton.api.TonApiClient;
 import com.google.gson.JsonObject;
-
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
 
 /**
  * Базовий клас для контрактів TON
