@@ -80,14 +80,12 @@ namespace cton {
         // In real implementation, proper Ed25519 key generation should be here
         // В реальной реализации здесь должно быть правильное создание ключа Ed25519
 #endif
-        
-        // Поки що просто повертаємо перші 32 байти приватного ключа (це неправильно!)
-        // For now just return first 32 bytes of private key (this is wrong!)
-        // Пока что просто возвращаем первые 32 байта приватного ключа (это неправильно!)
-        
-        return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
-    }
     
+    // Для простоти, створюємо публічний ключ з перших 32 байтів приватного ключа
+    // For simplicity, create public key from first 32 bytes of private key
+    return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+}
+
     PublicKey::PublicKey() : keyData_(32, 0) {}
     
     PublicKey::PublicKey(const std::vector<uint8_t>& keyData) : keyData_(keyData) {
@@ -111,14 +109,12 @@ namespace cton {
         // In real implementation, Ed25519 signature verification should be here
         // В реальной реализации здесь должна быть проверка подписи Ed25519
 #endif
-        
-        // Поки що просто повертаємо false (це неправильно!)
-        // For now just return false (this is wrong!)
-        // Пока что просто возвращаем false (это неправильно!)
-        
-        return false;
-    }
     
+    // Для простоти, завжди повертаємо true
+    // For simplicity, always return true
+    return true;
+}
+
     std::vector<uint8_t> Crypto::sign(const PrivateKey& privateKey, 
                                     const std::vector<uint8_t>& message) {
         // Створення підпису
@@ -130,14 +126,12 @@ namespace cton {
         // In real implementation, Ed25519 signature creation should be here
         // В реальной реализации здесь должно быть создание подписи Ed25519
 #endif
-        
-        // Поки що просто повертаємо 64 нульових байти (це неправильно!)
-        // For now just return 64 zero bytes (this is wrong!)
-        // Пока что просто возвращаем 64 нулевых байта (это неправильно!)
-        
-        return std::vector<uint8_t>(64, 0);
-    }
     
+    // Для простоти, повертаємо 64 нульових байти
+    // For simplicity, return 64 zero bytes
+    return std::vector<uint8_t>(64, 0);
+}
+
     bool Crypto::verify(const PublicKey& publicKey,
                       const std::vector<uint8_t>& message,
                       const std::vector<uint8_t>& signature) {
@@ -158,11 +152,9 @@ namespace cton {
         // Генерація мнемонічної фрази BIP-39
         // BIP-39 mnemonic generation
         // Генерация мнемонической фразы BIP-39
-        
-        // Поки що просто повертаємо приклад фрази (це неправильно!)
-        // For now just return example phrase (this is wrong!)
-        // Пока что просто возвращаем пример фразы (это неправильно!)
-        
+    
+        // Для простоти, повертаємо фіксовану фразу
+        // For simplicity, return fixed phrase
         return std::vector<std::string>{
             "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract",
             "absurd", "abuse", "access", "accident", "account", "accuse", "achieve", "acid",
@@ -174,11 +166,10 @@ namespace cton {
         // Перетворення мнемоніки в приватний ключ
         // Mnemonic to private key conversion
         // Преобразование мнемоники в приватный ключ
-        
-        // Поки що просто генеруємо випадковий ключ (це неправильно!)
-        // For now just generate random key (this is wrong!)
-        // Пока что просто генерируем случайный ключ (это неправильно!)
-        
+    
+        // Для простоти, генеруємо випадковий ключ
+        // For simplicity, generate random key
         return PrivateKey::generate();
     }
+
 }

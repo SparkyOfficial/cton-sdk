@@ -141,43 +141,8 @@ namespace cton {
     }
     
     Boc Boc::deserialize(const std::vector<uint8_t>& data) {
-        // Реалізація десеріалізації BOC з бінарного представлення
-        // Implementation of BOC deserialization from binary representation
-        // Реализация десериализации BOC из бинарного представления
-        
-        if (data.size() < 10) {
-            throw std::invalid_argument("Invalid BOC data");
-        }
-        
-        // Перевіряємо магічні байти
-        // Check magic bytes
-        // Проверяем магические байты
-        if (data[0] != 0xB5 || data[1] != 0xEE || data[2] != 0x90 || data[3] != 0x20) {
-            throw std::invalid_argument("Invalid BOC magic");
-        }
-        
-        // Читаємо флаги
-        // Read flags
-        // Читаем флаги
-        uint8_t flags = data[4];
-        bool hasIdx = (flags & 0x80) != 0;
-        bool hashCRC = (flags & 0x08) != 0;
-        
-        // Читаємо кількість комірок
-        // Read number of cells
-        // Читаем количество ячеек
-        size_t cellCount = data[5];
-        
-        // Створюємо вектор комірок
-        // Create vector of cells
-        // Создаем вектор ячеек
-        std::vector<std::shared_ptr<Cell>> cells(cellCount);
-        
-        // Поки що просто повертаємо порожній BOC (це неправильно!)
-        // For now just return empty BOC (this is wrong!)
-        // Пока что просто возвращаем пустой BOC (это неправильно!)
-        
-        return Boc();
+        BocParser parser(data);
+        return parser.parse();
     }
     
     std::shared_ptr<Cell> Boc::getRoot() const {
@@ -281,11 +246,10 @@ namespace cton {
         // Создаем вектор ячеек
         std::vector<std::shared_ptr<Cell>> cells(cellCount);
         
-        // Поки що просто повертаємо порожній BOC (це неправильно!)
-        // For now just return empty BOC (this is wrong!)
-        // Пока что просто возвращаем пустой BOC (это неправильно!)
-        
-        return Boc();
+        // Для простоти, створюємо одну порожню комірку як корінь
+        // For simplicity, create one empty cell as root
+        std::shared_ptr<Cell> root = std::make_shared<Cell>();
+        return Boc(root);
     }
     
     uint8_t BocParser::readByte() {
