@@ -51,10 +51,22 @@ namespace cton {
         int8_t getWorkchain() const;
         
         /**
+         * @brief Встановити робочий ланцюг
+         * @param workchain робочий ланцюг
+         */
+        void setWorkchain(int8_t workchain);
+        
+        /**
          * @brief Отримати хеш-частину адреси
          * @return хеш-частина (32 байти)
          */
         std::vector<uint8_t> getHashPart() const;
+        
+        /**
+         * @brief Встановити хеш-частину адреси
+         * @param hashPart хеш-частина (32 байти)
+         */
+        void setHashPart(const std::vector<uint8_t>& hashPart);
         
         /**
          * @brief Отримати raw-представлення адреси

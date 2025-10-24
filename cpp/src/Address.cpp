@@ -54,8 +54,20 @@ namespace cton {
         return workchain_;
     }
     
+    void Address::setWorkchain(int8_t workchain) {
+        workchain_ = workchain;
+    }
+
     std::vector<uint8_t> Address::getHashPart() const {
         return hashPart_;
+    }
+    
+    void Address::setHashPart(const std::vector<uint8_t>& hashPart) {
+        if (hashPart.size() != 32) {
+            throw std::invalid_argument("Hash part must be exactly 32 bytes");
+        }
+        hashPart_ = hashPart;
+        valid_ = true;
     }
     
     std::string Address::toRaw() const {

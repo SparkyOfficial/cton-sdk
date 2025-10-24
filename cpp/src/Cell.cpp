@@ -10,7 +10,7 @@ namespace cton {
     Cell::Cell() : bitSize_(0), special_(false), depth_(0) {}
     
     Cell::Cell(const std::vector<uint8_t>& data, size_t bitSize, 
-               const std::vector<std::weak_ptr<Cell>>& references, bool special)
+               const std::vector<std::shared_ptr<Cell>>& references, bool special)
         : data_(data), bitSize_(bitSize), references_(references), special_(special), depth_(0) {}
     
     Cell::~Cell() {}
@@ -24,7 +24,15 @@ namespace cton {
     }
     
     std::vector<std::weak_ptr<Cell>> Cell::getReferences() const {
-        return references_;
+        // Convert shared_ptr to weak_ptr
+        std::vector<std::weak_ptr<Cell>> weakRefs;
+        weakRefs.reserve(references_.size());
+        
+        for (const auto& ref : references_) {
+            weakRefs.push_back(ref);
+        }
+        
+        return weakRefs;
     }
     
     bool Cell::isSpecial() const {
@@ -74,6 +82,31 @@ namespace cton {
         } catch (...) {
             return false;
         }
+    }
+    
+    bool Cell::addReference(std::shared_ptr<Cell> cell) {
+        if (!cell) {
+            return false;
+        }
+        
+        if (references_.size() >= MAX_REFS) {
+            return false; // Maximum number of references reached
+        }
+        
+        references_.push_back(cell);
+        return true;
+    }
+    
+    std::shared_ptr<Cell> Cell::getReference(size_t index) const {
+        if (index >= references_.size()) {
+            return nullptr;
+        }
+        
+        return references_[index];
+    }
+    
+    size_t Cell::getReferencesCount() const {
+        return references_.size();
     }
     
     CellBuilder::CellBuilder() : bitOffset_(0) {}
@@ -195,16 +228,8 @@ namespace cton {
     }
     
     std::shared_ptr<Cell> CellBuilder::build() {
-        // Створення вектора слабких посилань
-        std::vector<std::weak_ptr<Cell>> weakRefs;
-        weakRefs.reserve(references_.size());
-        
-        for (const auto& ref : references_) {
-            weakRefs.push_back(ref);
-        }
-        
         // Створення комірки через new і shared_ptr
         // This approach avoids the private constructor issue with make_shared
-        return std::shared_ptr<Cell>(new Cell(buffer_, bitOffset_, weakRefs, false));
+        return std::shared_ptr<Cell>(new Cell(buffer_, bitOffset_, references_, false));
     }
 }

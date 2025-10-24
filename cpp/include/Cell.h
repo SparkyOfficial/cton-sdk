@@ -69,13 +69,18 @@ namespace cton {
         bool storeInt(size_t bits, int64_t value);
         bool storeBytes(const std::vector<uint8_t>& data);
         
+        // Методи для роботи з референсами
+        bool addReference(std::shared_ptr<Cell> cell);
+        std::shared_ptr<Cell> getReference(size_t index) const;
+        size_t getReferencesCount() const;
+        
     private:
         // Дані комірки
         std::vector<uint8_t> data_;
         size_t bitSize_;
         
-        // Референси на інші комірки
-        std::vector<std::weak_ptr<Cell>> references_;
+        // Референси на інші комірки (використовуємо shared_ptr для управління пам'яттю)
+        std::vector<std::shared_ptr<Cell>> references_;
         
         // Спеціальні прапорці
         bool special_;
@@ -85,7 +90,7 @@ namespace cton {
         
         // Приватний конструктор для CellBuilder
         Cell(const std::vector<uint8_t>& data, size_t bitSize, 
-             const std::vector<std::weak_ptr<Cell>>& references, bool special);
+             const std::vector<std::shared_ptr<Cell>>& references, bool special);
         
         // Дружній клас для побудови комірок
         friend class CellBuilder;

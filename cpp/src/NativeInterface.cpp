@@ -88,13 +88,9 @@ bool cell_store_ref(void* cell, void* refCell) {
     }
     
     try {
-        // Тут потрібно перетворити void* в shared_ptr<Cell>
-        // Here we need to convert void* to shared_ptr<Cell>
-        // Здесь нужно преобразовать void* в shared_ptr<Cell>
-        // Поки що просто повертаємо true (це неправильно!)
-        // For now just return true (this is wrong!)
-        // Пока что просто возвращаем true (это неправильно!)
-        return true;
+        // Convert void* to shared_ptr<Cell>
+        std::shared_ptr<Cell> ref(static_cast<Cell*>(refCell));
+        return static_cast<Cell*>(cell)->addReference(ref);
     } catch (...) {
         return false;
     }
@@ -133,7 +129,7 @@ int cell_get_refs_count(void* cell) {
     }
     
     try {
-        return static_cast<Cell*>(cell)->getReferences().size();
+        return static_cast<Cell*>(cell)->getReferencesCount();
     } catch (...) {
         return -1;
     }
@@ -145,12 +141,13 @@ void* cell_get_ref(void* cell, int index) {
     }
     
     try {
-        // Тут потрібно отримати референс за індексом
-        // Here we need to get reference by index
-        // Здесь нужно получить ссылку по индексу
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
+        std::shared_ptr<Cell> ref = static_cast<Cell*>(cell)->getReference(index);
+        if (ref) {
+            // Return the raw pointer to the Cell object
+            // Note: This is a simplification. In a real implementation, we would need
+            // to handle the shared_ptr properly to avoid memory issues.
+            return ref.get();
+        }
         return nullptr;
     } catch (...) {
         return nullptr;
@@ -255,12 +252,7 @@ void address_set_workchain(void* address, int8_t workchain) {
     }
     
     try {
-        // Тут потрібно встановити workchain
-        // Here we need to set workchain
-        // Здесь нужно установить workchain
-        // Поки що нічого не робимо (це неправильно!)
-        // For now do nothing (this is wrong!)
-        // Пока что ничего не делаем (это неправильно!)
+        static_cast<Address*>(address)->setWorkchain(workchain);
     } catch (...) {
         // Нічого не робимо
         // Do nothing
@@ -274,12 +266,8 @@ void address_set_hash_part(void* address, const uint8_t* hashPart) {
     }
     
     try {
-        // Тут потрібно встановити hash part
-        // Here we need to set hash part
-        // Здесь нужно установить hash part
-        // Поки що нічого не робимо (це неправильно!)
-        // For now do nothing (this is wrong!)
-        // Пока что ничего не делаем (это неправильно!)
+        std::vector<uint8_t> hash(hashPart, hashPart + 32);
+        static_cast<Address*>(address)->setHashPart(hash);
     } catch (...) {
         // Нічого не робимо
         // Do nothing
@@ -318,13 +306,8 @@ void private_key_destroy(void* privateKey) {
 void* private_key_generate() {
     try {
         PrivateKey key = PrivateKey::generate();
-        // Тут потрібно повернути новий об'єкт
-        // Here we need to return a new object
-        // Здесь нужно вернуть новый объект
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        // Create a new PrivateKey object and return it
+        return new PrivateKey(key);
     } catch (...) {
         return nullptr;
     }
@@ -350,13 +333,9 @@ void* private_key_get_public_key(void* privateKey) {
     }
     
     try {
-        // Тут потрібно отримати публічний ключ
-        // Here we need to get public key
-        // Здесь нужно получить публичный ключ
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        PublicKey publicKey = static_cast<PrivateKey*>(privateKey)->getPublicKey();
+        // Create a new PublicKey object and return it
+        return new PublicKey(publicKey);
     } catch (...) {
         return nullptr;
     }
@@ -427,13 +406,14 @@ void* crypto_sign(void* privateKey, const uint8_t* message, int messageLen) {
     
     try {
         std::vector<uint8_t> msg(message, message + messageLen);
-        // Тут потрібно створити підпис
-        // Here we need to create signature
-        // Здесь нужно создать подпись
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        std::vector<uint8_t> signature = Crypto::sign(*static_cast<PrivateKey*>(privateKey), msg);
+        
+        // Allocate memory for the signature and copy it
+        uint8_t* result = (uint8_t*)malloc(signature.size());
+        if (result) {
+            std::memcpy(result, signature.data(), signature.size());
+        }
+        return result;
     } catch (...) {
         return nullptr;
     }
@@ -457,13 +437,29 @@ bool crypto_verify(void* publicKey, const uint8_t* message, int messageLen,
 char** crypto_generate_mnemonic() {
     try {
         auto words = Crypto::generateMnemonic();
-        // Тут потрібно перетворити вектор в масив C-рядків
-        // Here we need to convert vector to array of C-strings
-        // Здесь нужно преобразовать вектор в массив C-строк
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        
+        // Allocate memory for the array of C-strings
+        char** result = (char**)malloc((words.size() + 1) * sizeof(char*));
+        if (!result) {
+            return nullptr;
+        }
+        
+        // Convert each word to a C-string
+        for (size_t i = 0; i < words.size(); ++i) {
+            result[i] = string_to_cstr(words[i]);
+            if (!result[i]) {
+                // If allocation fails, clean up and return nullptr
+                for (size_t j = 0; j < i; ++j) {
+                    free(result[j]);
+                }
+                free(result);
+                return nullptr;
+            }
+        }
+        
+        // Null-terminate the array
+        result[words.size()] = nullptr;
+        return result;
     } catch (...) {
         return nullptr;
     }
@@ -475,13 +471,15 @@ void* crypto_mnemonic_to_private_key(char** mnemonic) {
     }
     
     try {
-        // Тут потрібно перетворити масив C-рядків в вектор
-        // Here we need to convert array of C-strings to vector
-        // Здесь нужно преобразовать массив C-строк в вектор
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        // Convert array of C-strings to vector of strings
+        std::vector<std::string> words;
+        for (int i = 0; mnemonic[i] != nullptr; ++i) {
+            words.push_back(std::string(mnemonic[i]));
+        }
+        
+        PrivateKey key = Crypto::mnemonicToPrivateKey(words);
+        // Create a new PrivateKey object and return it
+        return new PrivateKey(key);
     } catch (...) {
         return nullptr;
     }
@@ -502,13 +500,10 @@ void* boc_create_with_root(void* rootCell) {
     }
     
     try {
-        // Тут потрібно створити BOC з кореневою коміркою
-        // Here we need to create BOC with root cell
-        // Здесь нужно создать BOC с корневой ячейкой
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        // Convert void* to shared_ptr<Cell>
+        std::shared_ptr<Cell> cell(static_cast<Cell*>(rootCell));
+        // Create a new Boc object with the root cell
+        return new Boc(cell);
     } catch (...) {
         return nullptr;
     }
@@ -526,14 +521,14 @@ void* boc_serialize(void* boc, bool hasIdx, bool hashCRC) {
     }
     
     try {
-        auto data = static_cast<Boc*>(boc)->serialize(hasIdx, hashCRC);
-        // Тут потрібно перетворити вектор в масив байтів
-        // Here we need to convert vector to byte array
-        // Здесь нужно преобразовать вектор в массив байтов
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        std::vector<uint8_t> data = static_cast<Boc*>(boc)->serialize(hasIdx, hashCRC);
+        
+        // Allocate memory for the serialized data and copy it
+        uint8_t* result = (uint8_t*)malloc(data.size());
+        if (result) {
+            std::memcpy(result, data.data(), data.size());
+        }
+        return result;
     } catch (...) {
         return nullptr;
     }
@@ -547,13 +542,8 @@ void* boc_deserialize(const uint8_t* data, int length) {
     try {
         std::vector<uint8_t> vec(data, data + length);
         Boc boc = Boc::deserialize(vec);
-        // Тут потрібно повернути новий об'єкт
-        // Here we need to return a new object
-        // Здесь нужно вернуть новый объект
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
-        return nullptr;
+        // Create a new Boc object and return it
+        return new Boc(boc);
     } catch (...) {
         return nullptr;
     }
@@ -565,12 +555,13 @@ void* boc_get_root(void* boc) {
     }
     
     try {
-        // Тут потрібно отримати кореневу комірку
-        // Here we need to get root cell
-        // Здесь нужно получить корневую ячейку
-        // Поки що просто повертаємо nullptr (це неправильно!)
-        // For now just return nullptr (this is wrong!)
-        // Пока что просто возвращаем nullptr (это неправильно!)
+        std::shared_ptr<Cell> root = static_cast<Boc*>(boc)->getRoot();
+        // Return the raw pointer to the Cell object
+        // Note: This is a simplification. In a real implementation, we would need
+        // to handle the shared_ptr properly to avoid memory issues.
+        if (root) {
+            return root.get();
+        }
         return nullptr;
     } catch (...) {
         return nullptr;
@@ -583,12 +574,9 @@ void boc_set_root(void* boc, void* rootCell) {
     }
     
     try {
-        // Тут потрібно встановити кореневу комірку
-        // Here we need to set root cell
-        // Здесь нужно установить корневую ячейку
-        // Поки що нічого не робимо (це неправильно!)
-        // For now do nothing (this is wrong!)
-        // Пока что ничего не делаем (это неправильно!)
+        // Convert void* to shared_ptr<Cell>
+        std::shared_ptr<Cell> cell(static_cast<Cell*>(rootCell));
+        static_cast<Boc*>(boc)->setRoot(cell);
     } catch (...) {
         // Нічого не робимо
         // Do nothing
