@@ -5,13 +5,19 @@
 
 package com.cton.api;
 
-import okhttp3.*;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonElement;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
 
 /**
  * Клієнт для взаємодії з TON Center API
@@ -44,36 +50,12 @@ public class TonApiClient {
     }
     
     /**
-     * Отримати інформацію про адресу
-     * @param address адреса у форматі raw (наприклад, 0:1234...)
-     * @return інформація про адресу у форматі JSON
+     * Виконати HTTP запит
+     * @param request HTTP запит
+     * @return JsonObject з відповіддю
      * @throws IOException якщо сталася помилка мережі
      */
-    public JsonObject getAddressInformation(String address) throws IOException {
-        // формуємо URL запиту
-        // формируем URL запроса
-        // build request URL
-        String url = baseUrl + "getAddressInformation?address=" + address;
-        
-        // створюємо запит
-        // создаем запрос
-        // create request
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(url)
-            .get();
-            
-        // додаємо API ключ якщо потрібно
-        // добавляем API ключ если нужно
-        // add API key if needed
-        if (apiKey != null && !apiKey.isEmpty()) {
-            requestBuilder.addHeader("X-API-Key", apiKey);
-        }
-        
-        Request request = requestBuilder.build();
-        
-        // виконуємо запит
-        // выполняем запрос
-        // execute request
+    private JsonObject executeRequest(Request request) throws IOException {
         try (Response response = httpClient.newCall(request).execute()) {
             if (!response.isSuccessful()) {
                 throw new IOException("Unexpected response code: " + response);
@@ -90,6 +72,48 @@ public class TonApiClient {
             String responseBody = body.string();
             return JsonParser.parseString(responseBody).getAsJsonObject();
         }
+    }
+    
+    /**
+     * Створити запит з API ключем
+     * @param url URL запиту
+     * @param method HTTP метод
+     * @param requestBody тіло запиту (для POST запитів)
+     * @return Request об'єкт
+     */
+    private Request createRequest(String url, String method, RequestBody requestBody) {
+        Request.Builder requestBuilder = new Request.Builder().url(url);
+        
+        if ("POST".equals(method)) {
+            requestBuilder.post(requestBody);
+        } else {
+            requestBuilder.get();
+        }
+            
+        // додаємо API ключ якщо потрібно
+        // добавляем API ключ если нужно
+        // add API key if needed
+        if (apiKey != null && !apiKey.isEmpty()) {
+            requestBuilder.addHeader("X-API-Key", apiKey);
+        }
+        
+        return requestBuilder.build();
+    }
+    
+    /**
+     * Отримати інформацію про адресу
+     * @param address адреса у форматі raw (наприклад, 0:1234...)
+     * @return інформація про адресу у форматі JSON
+     * @throws IOException якщо сталася помилка мережі
+     */
+    public JsonObject getAddressInformation(String address) throws IOException {
+        // формуємо URL запиту
+        // формируем URL запроса
+        // build request URL
+        String url = baseUrl + "getAddressInformation?address=" + address;
+        
+        Request request = createRequest(url, "GET", null);
+        return executeRequest(request);
     }
     
     /**
@@ -129,41 +153,9 @@ public class TonApiClient {
         requestBody.addProperty("method", method);
         requestBody.add("stack", stack);
         
-        // створюємо запит
-        // создаем запрос
-        // create request
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(url)
-            .post(RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
-            
-        // додаємо API ключ якщо потрібно
-        // добавляем API ключ если нужно
-        // add API key if needed
-        if (apiKey != null && !apiKey.isEmpty()) {
-            requestBuilder.addHeader("X-API-Key", apiKey);
-        }
-        
-        Request request = requestBuilder.build();
-        
-        // виконуємо запит
-        // выполняем запрос
-        // execute request
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected response code: " + response);
-            }
-            
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Empty response body");
-            }
-            
-            // парсимо JSON відповідь
-            // парсим JSON ответ
-            // parse JSON response
-            String responseBody = body.string();
-            return JsonParser.parseString(responseBody).getAsJsonObject();
-        }
+        Request request = createRequest(url, "POST", 
+            RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
+        return executeRequest(request);
     }
     
     /**
@@ -205,41 +197,9 @@ public class TonApiClient {
         requestBody.addProperty("shard", shard);
         requestBody.addProperty("seqno", seqno);
         
-        // створюємо запит
-        // создаем запрос
-        // create request
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(url)
-            .post(RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
-            
-        // додаємо API ключ якщо потрібно
-        // добавляем API ключ если нужно
-        // add API key if needed
-        if (apiKey != null && !apiKey.isEmpty()) {
-            requestBuilder.addHeader("X-API-Key", apiKey);
-        }
-        
-        Request request = requestBuilder.build();
-        
-        // виконуємо запит
-        // выполняем запрос
-        // execute request
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected response code: " + response);
-            }
-            
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Empty response body");
-            }
-            
-            // парсимо JSON відповідь
-            // парсим JSON ответ
-            // parse JSON response
-            String responseBody = body.string();
-            return JsonParser.parseString(responseBody).getAsJsonObject();
-        }
+        Request request = createRequest(url, "POST", 
+            RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
+        return executeRequest(request);
     }
     
     /**
@@ -281,41 +241,9 @@ public class TonApiClient {
         requestBody.addProperty("shard", shard);
         requestBody.addProperty("seqno", seqno);
         
-        // створюємо запит
-        // создаем запрос
-        // create request
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(url)
-            .post(RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
-            
-        // додаємо API ключ якщо потрібно
-        // добавляем API ключ если нужно
-        // add API key if needed
-        if (apiKey != null && !apiKey.isEmpty()) {
-            requestBuilder.addHeader("X-API-Key", apiKey);
-        }
-        
-        Request request = requestBuilder.build();
-        
-        // виконуємо запит
-        // выполняем запрос
-        // execute request
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected response code: " + response);
-            }
-            
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Empty response body");
-            }
-            
-            // парсимо JSON відповідь
-            // парсим JSON ответ
-            // parse JSON response
-            String responseBody = body.string();
-            return JsonParser.parseString(responseBody).getAsJsonObject();
-        }
+        Request request = createRequest(url, "POST", 
+            RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
+        return executeRequest(request);
     }
     
     /**
@@ -353,41 +281,9 @@ public class TonApiClient {
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("boc", bytesToBase64(bocBytes));
         
-        // створюємо запит
-        // создаем запрос
-        // create request
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(url)
-            .post(RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
-            
-        // додаємо API ключ якщо потрібно
-        // добавляем API ключ если нужно
-        // add API key if needed
-        if (apiKey != null && !apiKey.isEmpty()) {
-            requestBuilder.addHeader("X-API-Key", apiKey);
-        }
-        
-        Request request = requestBuilder.build();
-        
-        // виконуємо запит
-        // выполняем запрос
-        // execute request
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected response code: " + response);
-            }
-            
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Empty response body");
-            }
-            
-            // парсимо JSON відповідь
-            // парсим JSON ответ
-            // parse JSON response
-            String responseBody = body.string();
-            return JsonParser.parseString(responseBody).getAsJsonObject();
-        }
+        Request request = createRequest(url, "POST", 
+            RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
+        return executeRequest(request);
     }
     
     /**
@@ -423,41 +319,9 @@ public class TonApiClient {
         JsonObject requestBody = new JsonObject();
         requestBody.addProperty("boc", bocBase64);
         
-        // створюємо запит
-        // создаем запрос
-        // create request
-        Request.Builder requestBuilder = new Request.Builder()
-            .url(url)
-            .post(RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
-            
-        // додаємо API ключ якщо потрібно
-        // добавляем API ключ если нужно
-        // add API key if needed
-        if (apiKey != null && !apiKey.isEmpty()) {
-            requestBuilder.addHeader("X-API-Key", apiKey);
-        }
-        
-        Request request = requestBuilder.build();
-        
-        // виконуємо запит
-        // выполняем запрос
-        // execute request
-        try (Response response = httpClient.newCall(request).execute()) {
-            if (!response.isSuccessful()) {
-                throw new IOException("Unexpected response code: " + response);
-            }
-            
-            ResponseBody body = response.body();
-            if (body == null) {
-                throw new IOException("Empty response body");
-            }
-            
-            // парсимо JSON відповідь
-            // парсим JSON ответ
-            // parse JSON response
-            String responseBody = body.string();
-            return JsonParser.parseString(responseBody).getAsJsonObject();
-        }
+        Request request = createRequest(url, "POST", 
+            RequestBody.create(requestBody.toString(), MediaType.get("application/json")));
+        return executeRequest(request);
     }
     
     /**

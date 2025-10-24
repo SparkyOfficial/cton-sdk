@@ -4,6 +4,7 @@
 #include "../include/Cell.h"
 #include <stdexcept>
 #include <cstring>
+#include <sstream>
 
 namespace cton {
     
@@ -19,7 +20,22 @@ namespace cton {
 
     Cell::Cell(const std::vector<uint8_t>& data, size_t bitSize, 
                const std::vector<std::shared_ptr<Cell>>& references, bool special)
-        : data_(data), bitSize_(bitSize), references_(references), special_(special), depth_(0) {}
+        : data_(data), bitSize_(bitSize), references_(references), special_(special), depth_(0) {
+        // Validate parameters
+        if (bitSize > MAX_BITS) {
+            throw std::invalid_argument("Bit size exceeds maximum allowed");
+        }
+        
+        if (references.size() > MAX_REFS) {
+            throw std::invalid_argument("Number of references exceeds maximum allowed");
+        }
+        
+        // Validate that data size is consistent with bit size
+        size_t expectedByteSize = (bitSize + 7) / 8;
+        if (data_.size() < expectedByteSize) {
+            throw std::invalid_argument("Data size is smaller than expected for given bit size");
+        }
+    }
     
     Cell::~Cell() {}
     
@@ -57,7 +73,11 @@ namespace cton {
             data_ = builtCell->data_;
             bitSize_ = builtCell->bitSize_;
             return true;
+        } catch (const std::exception& e) {
+            // Log error or handle it appropriately
+            return false;
         } catch (...) {
+            // Handle any other unexpected exceptions
             return false;
         }
     }
@@ -72,7 +92,11 @@ namespace cton {
             data_ = builtCell->data_;
             bitSize_ = builtCell->bitSize_;
             return true;
+        } catch (const std::exception& e) {
+            // Log error or handle it appropriately
+            return false;
         } catch (...) {
+            // Handle any other unexpected exceptions
             return false;
         }
     }
@@ -87,7 +111,11 @@ namespace cton {
             data_ = builtCell->data_;
             bitSize_ = builtCell->bitSize_;
             return true;
+        } catch (const std::exception& e) {
+            // Log error or handle it appropriately
+            return false;
         } catch (...) {
+            // Handle any other unexpected exceptions
             return false;
         }
     }

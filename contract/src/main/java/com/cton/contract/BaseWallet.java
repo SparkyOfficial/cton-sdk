@@ -5,15 +5,19 @@
 
 package com.cton.contract;
 
+import java.io.IOException;
+import java.math.BigInteger;
+import java.util.Base64;
+
+import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
+import com.cton.sdk.Boc;
 import com.cton.sdk.Cell;
 import com.cton.sdk.CellBuilder;
-import com.cton.sdk.Boc;
-import com.cton.api.TonApiClient;
+import com.cton.sdk.Crypto;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import java.math.BigInteger;
-import java.io.IOException;
-import java.util.Base64;
 
 /**
  * Базова реалізація кошелька
@@ -85,7 +89,6 @@ public abstract class BaseWallet implements Wallet {
             // Додаємо текст коментаря
             // Добавляем текст комментария
             // Add comment text
-            bodyBuilder.storeUInt(32, 0); // Текст коментаря / Текст комментария / Comment text
             bodyBuilder.storeBytes(comment.getBytes());
         }
         
@@ -139,27 +142,119 @@ public abstract class BaseWallet implements Wallet {
         // Выполняем get-метод seqno
         // Execute seqno get-method
         JsonObject stack = new JsonObject();
-        JsonObject result = apiClient.getAddressInformation(address.toRaw());
+        JsonObject result = runGetMethod("seqno", stack);
         
-        // В реальній реалізації тут має бути виклик get-методу контракту
-        // В реальной реализации здесь должен быть вызов get-метода контракта
-        // In real implementation, contract get-method should be called here
+        // Перевіряємо чи є результат
+        // Проверяем, есть ли результат
+        // Check if there is a result
+        if (!result.has("result") || result.get("result").isJsonNull()) {
+            throw new IOException("Failed to get seqno");
+        }
         
-        // Повертаємо 0 як значення за замовчуванням
-        // Возвращаем 0 как значение по умолчанию
-        // Return 0 as default value
-        return 0;
+        // Отримуємо стек результатів
+        // Получаем стек результатов
+        // Get result stack
+        JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 1) {
+            throw new IOException("Invalid seqno format");
+        }
+        
+        // Seqno - перший елемент стеку
+        // Seqno - first element of stack
+        // Seqno - первый элемент стека
+        JsonElement seqnoElement = stackArray.get(0);
+        if (!seqnoElement.isJsonArray()) {
+            throw new IOException("Invalid seqno data format");
+        }
+        
+        JsonArray seqnoArray = seqnoElement.getAsJsonArray();
+        if (seqnoArray.size() < 2) {
+            throw new IOException("Invalid seqno array format");
+        }
+        
+        // Другий елемент містить значення
+        // Second element contains the value
+        // Второй элемент содержит значение
+        String seqnoStr = seqnoArray.get(1).getAsString();
+        return Long.parseLong(seqnoStr);
     }
     
     @Override
     public int getVersion() throws IOException {
-        // В реальній реалізації тут має бути отримання версії кошелька
-        // В реальной реализации здесь должно быть получение версии кошелька
-        // In real implementation, wallet version should be obtained here
+        // Виконуємо get-метод get_version
+        // Выполняем get-метод get_version
+        // Execute get_version get-method
+        JsonObject stack = new JsonObject();
+        JsonObject result = runGetMethod("get_version", stack);
         
-        // Повертаємо 0 як значення за замовчуванням
-        // Возвращаем 0 как значение по умолчанию
-        // Return 0 as default value
-        return 0;
+        // Перевіряємо чи є результат
+        // Проверяем, есть ли результат
+        // Check if there is a result
+        if (!result.has("result") || result.get("result").isJsonNull()) {
+            throw new IOException("Failed to get version");
+        }
+        
+        // Отримуємо стек результатів
+        // Получаем стек результатов
+        // Get result stack
+        JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 1) {
+            throw new IOException("Invalid version format");
+        }
+        
+        // Версія - перший елемент стеку
+        // Version - first element of stack
+        // Версия - первый элемент стека
+        JsonElement versionElement = stackArray.get(0);
+        if (!versionElement.isJsonArray()) {
+            throw new IOException("Invalid version data format");
+        }
+        
+        JsonArray versionArray = versionElement.getAsJsonArray();
+        if (versionArray.size() < 2) {
+            throw new IOException("Invalid version array format");
+        }
+        
+        // Другий елемент містить значення
+        // Second element contains the value
+        // Второй элемент содержит значение
+        String versionStr = versionArray.get(1).getAsString();
+        return Integer.parseInt(versionStr);
+    }
+    
+    /**
+     * Виконати get-метод смарт-контракту
+     * @param method назва методу
+     * @param stack параметри методу
+     * @return результат виконання методу
+     * @throws IOException якщо сталася помилка мережі
+     */
+    protected JsonObject runGetMethod(String method, JsonObject stack) throws IOException {
+        return apiClient.runGetMethod(address.toRaw(), method, stack);
+    }
+    
+    /**
+     * Transfer funds to another address
+     * @param destination адреса одержувача
+     * @param amount сума для переказу
+     * @param comment коментар до переказу
+     * @param privateKey приватний ключ для підпису
+     * @throws IOException якщо сталася помилка мережі
+     */
+    public void transfer(Address destination, BigInteger amount, String comment, Crypto.PrivateKey privateKey) throws IOException {
+        // Get seqno
+        long seqno = getSeqno();
+        
+        // Create transfer message
+        Cell message = createTransfer(destination, amount, comment);
+        
+        // In a real implementation, you would:
+        // 1. Create a proper wallet message with seqno
+        // 2. Sign it with the private key
+        // 3. Wrap it in an external message
+        // 4. Send it via the API
+        
+        // For now, just send the basic message
+        sendTransaction(message);
     }
 }

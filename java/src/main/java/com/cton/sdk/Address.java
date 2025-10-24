@@ -3,11 +3,11 @@
 
 package com.cton.sdk;
 
+import java.io.Closeable;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.Memory;
-import com.sun.jna.ptr.PointerByReference;
 
 /**
  * Java обгортка для Address C++ класу
@@ -16,7 +16,7 @@ import com.sun.jna.ptr.PointerByReference;
  * - workchain (1 байт)
  * - hash part (32 байти)
  */
-public class Address {
+public class Address implements Closeable {
     // Інтерфейс для взаємодії з нативною бібліотекою
     public interface CtonLibrary extends Library {
         CtonLibrary INSTANCE = (CtonLibrary) Native.load("cton-sdk-core", CtonLibrary.class);
@@ -50,12 +50,16 @@ public class Address {
         
         // Встановлення hash part
         void address_set_hash_part(Pointer address, byte[] hashPart);
+        
+        // Функція для звільнення пам'яті рядків
+        void free_string(Pointer str);
     }
     
     // Зробимо поле доступним для інших класів в тому самому пакеті
     // Make field accessible to other classes in the same package
     // Сделаем поле доступным для других классов в том же пакете
     Pointer nativeAddress;
+    private boolean closed = false;
     
     /**
      * Конструктор за замовчуванням
@@ -89,6 +93,9 @@ public class Address {
      * @return робочий ланцюг
      */
     public byte getWorkchain() {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         return CtonLibrary.INSTANCE.address_get_workchain(nativeAddress);
     }
     
@@ -97,6 +104,9 @@ public class Address {
      * @param workchain робочий ланцюг
      */
     public void setWorkchain(byte workchain) {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         CtonLibrary.INSTANCE.address_set_workchain(nativeAddress, workchain);
     }
     
@@ -105,6 +115,9 @@ public class Address {
      * @return хеш-частина (32 байти)
      */
     public byte[] getHashPart() {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         byte[] hashPart = new byte[32];
         CtonLibrary.INSTANCE.address_get_hash_part(nativeAddress, hashPart);
         return hashPart;
@@ -115,6 +128,9 @@ public class Address {
      * @param hashPart хеш-частина (32 байти)
      */
     public void setHashPart(byte[] hashPart) {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         if (hashPart.length != 32) {
             throw new IllegalArgumentException("Hash part must be exactly 32 bytes");
         }
@@ -126,11 +142,16 @@ public class Address {
      * @return рядок з raw адресою
      */
     public String toRaw() {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         Pointer rawPtr = CtonLibrary.INSTANCE.address_to_raw(nativeAddress);
         if (rawPtr == null) {
             return null;
         }
-        return rawPtr.getString(0);
+        String result = rawPtr.getString(0);
+        CtonLibrary.INSTANCE.free_string(rawPtr);
+        return result;
     }
     
     /**
@@ -140,11 +161,16 @@ public class Address {
      * @return рядок з user-friendly адресою
      */
     public String toUserFriendly(boolean isBounceable, boolean isTestOnly) {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         Pointer ufPtr = CtonLibrary.INSTANCE.address_to_user_friendly(nativeAddress, isBounceable, isTestOnly);
         if (ufPtr == null) {
             return null;
         }
-        return ufPtr.getString(0);
+        String result = ufPtr.getString(0);
+        CtonLibrary.INSTANCE.free_string(ufPtr);
+        return result;
     }
     
     /**
@@ -152,17 +178,21 @@ public class Address {
      * @return true якщо адреса коректна
      */
     public boolean isValid() {
+        if (closed) {
+            throw new IllegalStateException("Address has been closed");
+        }
         return CtonLibrary.INSTANCE.address_is_valid(nativeAddress);
     }
     
     /**
-     * Фінальайзер для звільнення пам'яті
+     * Закрити об'єкт і звільнити нативні ресурси
      */
     @Override
-    protected void finalize() throws Throwable {
-        if (nativeAddress != null) {
+    public void close() {
+        if (!closed && nativeAddress != null) {
             CtonLibrary.INSTANCE.address_destroy(nativeAddress);
+            nativeAddress = null;
+            closed = true;
         }
-        super.finalize();
     }
 }

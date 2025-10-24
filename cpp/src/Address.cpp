@@ -44,7 +44,7 @@ namespace cton {
         if (addressStr.find(':') != std::string::npos) {
             // Raw адреса
             parseRaw(addressStr);
-        } else if (addressStr.length() == 48) {
+        } else if (addressStr.length() >= 48) {
             // User-friendly адреса
             parseUserFriendly(addressStr);
         }
@@ -96,7 +96,7 @@ namespace cton {
         
         // Створюємо буфер для кодування
         std::vector<uint8_t> buffer;
-        buffer.reserve(36); // 1 байт tag + 32 байти hash + 3 байти CRC
+        buffer.reserve(36); // 1 байт tag + 1 байт workchain + 32 байти hash + 2 байти CRC
         
         // Додаємо tag байт
         uint8_t tag = 0x11; // Base tag for address
@@ -117,20 +117,9 @@ namespace cton {
         // Додаємо hash part (32 байти)
         buffer.insert(buffer.end(), hashPart_.begin(), hashPart_.end());
         
-        // Обчислюємо CRC16 (спрощена реалізація)
-        // Calculate CRC16 (simplified implementation)
-        uint16_t crc = 0;
-        for (size_t i = 0; i < buffer.size(); ++i) {
-            crc ^= (uint16_t)buffer[i] << 8;
-            for (int j = 0; j < 8; ++j) {
-                if (crc & 0x8000) {
-                    crc = (crc << 1) ^ 0x1021; // CRC-16-CCITT polynomial
-                } else {
-                    crc <<= 1;
-                }
-            }
-            crc &= 0xFFFF;
-        }
+        // Обчислюємо CRC16-CCITT
+        // Calculate CRC16-CCITT
+        uint16_t crc = calculateCRC16(buffer.data(), buffer.size());
         
         // Додаємо CRC до буфера
         // Add CRC to buffer
@@ -139,29 +128,7 @@ namespace cton {
         
         // Кодуємо в base64url
         // Encode to base64url
-        std::string result;
-        result.reserve((buffer.size() * 4 + 2) / 3);
-        
-        for (size_t i = 0; i < buffer.size(); i += 3) {
-            uint32_t triple = (buffer[i] << 16) | 
-                         ((i + 1 < buffer.size() ? buffer[i + 1] : 0) << 8) | 
-                         (i + 2 < buffer.size() ? buffer[i + 2] : 0);
-        
-            result.push_back(base64url_chars[(triple >> 18) & 0x3F]);
-            result.push_back(base64url_chars[(triple >> 12) & 0x3F]);
-            if (i + 1 < buffer.size()) {
-                result.push_back(base64url_chars[(triple >> 6) & 0x3F]);
-            } else {
-                break;
-            }
-            if (i + 2 < buffer.size()) {
-                result.push_back(base64url_chars[triple & 0x3F]);
-            } else {
-                break;
-            }
-        }
-        
-        return result;
+        return base64EncodeUrl(buffer);
     }
     
     bool Address::isValid() const {
@@ -234,27 +201,7 @@ namespace cton {
         
         // Декодуємо з base64url
         // Decode from base64url
-        std::vector<uint8_t> buffer;
-        buffer.reserve(userFriendlyAddress.length() * 3 / 4);
-        
-        uint32_t accumulator = 0;
-        int bitCount = 0;
-        
-        for (char c : userFriendlyAddress) {
-            size_t pos = base64url_chars.find(c);
-            if (pos == std::string::npos) {
-                valid_ = false;
-                return;
-            }
-        
-            accumulator = (accumulator << 6) | pos;
-            bitCount += 6;
-        
-            if (bitCount >= 8) {
-                bitCount -= 8;
-                buffer.push_back((accumulator >> bitCount) & 0xFF);
-            }
-        }
+        std::vector<uint8_t> buffer = base64DecodeUrl(userFriendlyAddress);
         
         // Перевіряємо мінімальний розмір (tag + workchain + hash + crc)
         // Check minimum size (tag + workchain + hash + crc)
@@ -266,21 +213,7 @@ namespace cton {
         // Перевіряємо CRC
         // Check CRC
         uint16_t receivedCrc = (buffer[buffer.size() - 2] << 8) | buffer[buffer.size() - 1];
-        uint16_t calculatedCrc = 0;
-        
-        // Обчислюємо CRC для всіх байтів окрім останніх двох
-        // Calculate CRC for all bytes except the last two
-        for (size_t i = 0; i < buffer.size() - 2; ++i) {
-            calculatedCrc ^= (uint16_t)buffer[i] << 8;
-            for (int j = 0; j < 8; ++j) {
-                if (calculatedCrc & 0x8000) {
-                    calculatedCrc = (calculatedCrc << 1) ^ 0x1021; // CRC-16-CCITT polynomial
-                } else {
-                    calculatedCrc <<= 1;
-                }
-            }
-            calculatedCrc &= 0xFFFF;
-        }
+        uint16_t calculatedCrc = calculateCRC16(buffer.data(), buffer.size() - 2);
         
         if (receivedCrc != calculatedCrc) {
             valid_ = false;
@@ -305,5 +238,99 @@ namespace cton {
         
         valid_ = true;
     }
-
+    
+    // Додаткова функція для обчислення CRC16-CCITT
+    // Additional function for calculating CRC16-CCITT
+    uint16_t Address::calculateCRC16(const uint8_t* data, size_t length) {
+        uint16_t crc = 0xFFFF;
+        
+        for (size_t i = 0; i < length; ++i) {
+            crc ^= data[i];
+            
+            for (int j = 0; j < 8; ++j) {
+                if (crc & 0x0001) {
+                    crc >>= 1;
+                    crc ^= 0xA001; // CRC-16-CCITT polynomial
+                } else {
+                    crc >>= 1;
+                }
+            }
+        }
+        
+        return crc;
+    }
+    
+    // Додаткова функція для base64url кодування
+    // Additional function for base64url encoding
+    std::string Address::base64EncodeUrl(const std::vector<uint8_t>& data) {
+        std::string result;
+        result.reserve((data.size() * 4 + 2) / 3);
+        
+        for (size_t i = 0; i < data.size(); i += 3) {
+            uint32_t triple = (data[i] << 16) | 
+                         ((i + 1 < data.size() ? data[i + 1] : 0) << 8) | 
+                         (i + 2 < data.size() ? data[i + 2] : 0);
+        
+            result.push_back(base64url_chars[(triple >> 18) & 0x3F]);
+            result.push_back(base64url_chars[(triple >> 12) & 0x3F]);
+            if (i + 1 < data.size()) {
+                result.push_back(base64url_chars[(triple >> 6) & 0x3F]);
+            } else {
+                break;
+            }
+            if (i + 2 < data.size()) {
+                result.push_back(base64url_chars[triple & 0x3F]);
+            } else {
+                break;
+            }
+        }
+        
+        // Додаємо padding якщо потрібно
+        // Add padding if needed
+        // Добавляем паддинг если нужно
+        int padding = (3 - (data.size() % 3)) % 3;
+        for (int i = 0; i < padding; ++i) {
+            if (!result.empty()) {
+                result.pop_back();
+            }
+        }
+        
+        return result;
+    }
+    
+    // Додаткова функція для base64url декодування
+    // Additional function for base64url decoding
+    std::vector<uint8_t> Address::base64DecodeUrl(const std::string& data) {
+        std::vector<uint8_t> buffer;
+        buffer.reserve(data.length() * 3 / 4);
+        
+        uint32_t accumulator = 0;
+        int bitCount = 0;
+        
+        for (char c : data) {
+            size_t pos = base64url_chars.find(c);
+            if (pos == std::string::npos) {
+                // Якщо символ не знайдено, пробуємо стандартні символи padding
+                // If character not found, try standard padding characters
+                // Если символ не найден, пробуем стандартные символы паддинга
+                if (c == '=' || c == ' ' || c == '\n' || c == '\r') {
+                    continue;
+                }
+                // Якщо це інший символ, повертаємо порожній буфер
+                // If this is another character, return empty buffer
+                // Если это другой символ, возвращаем пустой буфер
+                return std::vector<uint8_t>();
+            }
+        
+            accumulator = (accumulator << 6) | pos;
+            bitCount += 6;
+        
+            if (bitCount >= 8) {
+                bitCount -= 8;
+                buffer.push_back((accumulator >> bitCount) & 0xFF);
+            }
+        }
+        
+        return buffer;
+    }
 }

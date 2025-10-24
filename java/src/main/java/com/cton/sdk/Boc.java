@@ -3,6 +3,8 @@
 
 package com.cton.sdk;
 
+import java.io.Closeable;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
@@ -13,7 +15,7 @@ import com.sun.jna.Pointer;
  * BOC (Bag of Cells) - це формат серіалізації дерева комірок (Cell)
  * в бінарне представлення для передачі по мережі або зберігання
  */
-public class Boc {
+public class Boc implements Closeable {
     // Інтерфейс для взаємодії з нативною бібліотекою
     public interface CtonLibrary extends Library {
         CtonLibrary INSTANCE = (CtonLibrary) Native.load("cton-sdk-core", CtonLibrary.class);
@@ -41,6 +43,7 @@ public class Boc {
     }
     
     private Pointer nativeBoc;
+    private boolean closed = false;
     
     /**
      * Конструктор за замовчуванням
@@ -71,6 +74,9 @@ public class Boc {
      * @return бінарне представлення BOC
      */
     public byte[] serialize(boolean hasIdx, boolean hashCRC) {
+        if (closed) {
+            throw new IllegalStateException("Boc has been closed");
+        }
         Pointer dataPtr = CtonLibrary.INSTANCE.boc_serialize(nativeBoc, hasIdx, hashCRC);
         // В реальній реалізації тут має бути конвертація з Pointer в byte[]
         // For now return empty array
@@ -92,6 +98,9 @@ public class Boc {
      * @return коренева комірка
      */
     public Cell getRoot() {
+        if (closed) {
+            throw new IllegalStateException("Boc has been closed");
+        }
         Pointer cellPtr = CtonLibrary.INSTANCE.boc_get_root(nativeBoc);
         return new Cell(cellPtr);
     }
@@ -101,17 +110,21 @@ public class Boc {
      * @param root нова коренева комірка
      */
     public void setRoot(Cell root) {
+        if (closed) {
+            throw new IllegalStateException("Boc has been closed");
+        }
         CtonLibrary.INSTANCE.boc_set_root(nativeBoc, root.nativeCell);
     }
     
     /**
-     * Фінальайзер для звільнення пам'яті
+     * Закрити об'єкт і звільнити нативні ресурси
      */
     @Override
-    protected void finalize() throws Throwable {
-        if (nativeBoc != null) {
+    public void close() {
+        if (!closed && nativeBoc != null) {
             CtonLibrary.INSTANCE.boc_destroy(nativeBoc);
+            nativeBoc = null;
+            closed = true;
         }
-        super.finalize();
     }
 }

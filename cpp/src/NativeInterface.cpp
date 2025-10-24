@@ -20,25 +20,54 @@ char* string_to_cstr(const std::string& str) {
         return nullptr;
     }
     
-    char* cstr = (char*)malloc(str.length() + 1);
-    if (cstr) {
-        std::strcpy(cstr, str.c_str());
+    try {
+        char* cstr = (char*)malloc(str.length() + 1);
+        if (cstr) {
+            std::strcpy(cstr, str.c_str());
+        }
+        return cstr;
+    } catch (...) {
+        return nullptr;
     }
-    return cstr;
+}
+
+// Function to free C string allocated by string_to_cstr
+void free_string(char* str) {
+    if (str) {
+        free(str);
+    }
+}
+
+// Function to free array of C strings
+void free_string_array(char** strArray) {
+    if (strArray) {
+        for (int i = 0; strArray[i] != nullptr; ++i) {
+            free_string(strArray[i]);
+        }
+        free(strArray);
+    }
 }
 
 // Cell functions
 void* cell_create() {
     try {
         return new Cell();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
 
 void cell_destroy(void* cell) {
     if (cell) {
-        delete static_cast<Cell*>(cell);
+        try {
+            delete static_cast<Cell*>(cell);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
     }
 }
 
@@ -48,9 +77,12 @@ bool cell_store_uint(void* cell, int bits, uint64_t value) {
     }
     
     try {
-        static_cast<Cell*>(cell)->storeUInt(bits, value);
-        return true;
+        return static_cast<Cell*>(cell)->storeUInt(bits, value);
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return false;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return false;
     }
 }
@@ -61,9 +93,12 @@ bool cell_store_int(void* cell, int bits, int64_t value) {
     }
     
     try {
-        static_cast<Cell*>(cell)->storeInt(bits, value);
-        return true;
+        return static_cast<Cell*>(cell)->storeInt(bits, value);
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return false;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return false;
     }
 }
@@ -75,9 +110,12 @@ bool cell_store_bytes(void* cell, const uint8_t* data, int length) {
     
     try {
         std::vector<uint8_t> vec(data, data + length);
-        static_cast<Cell*>(cell)->storeBytes(vec);
-        return true;
+        return static_cast<Cell*>(cell)->storeBytes(vec);
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return false;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return false;
     }
 }
@@ -91,7 +129,11 @@ bool cell_store_ref(void* cell, void* refCell) {
         // Convert void* to shared_ptr<Cell>
         std::shared_ptr<Cell> ref(static_cast<Cell*>(refCell));
         return static_cast<Cell*>(cell)->addReference(ref);
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return false;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return false;
     }
 }
@@ -106,7 +148,11 @@ int cell_get_data(void* cell, uint8_t* buffer, int bufferSize) {
         int copySize = std::min(bufferSize, (int)data.size());
         std::memcpy(buffer, data.data(), copySize);
         return copySize;
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return -1;
     }
 }
@@ -118,7 +164,11 @@ int cell_get_bit_size(void* cell) {
     
     try {
         return static_cast<Cell*>(cell)->getBitSize();
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return -1;
     }
 }
@@ -130,7 +180,11 @@ int cell_get_refs_count(void* cell) {
     
     try {
         return static_cast<Cell*>(cell)->getReferencesCount();
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return -1;
     }
 }
@@ -149,7 +203,11 @@ void* cell_get_ref(void* cell, int index) {
             return ref.get();
         }
         return nullptr;
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -158,7 +216,11 @@ void* cell_get_ref(void* cell, int index) {
 void* address_create() {
     try {
         return new Address();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -170,14 +232,22 @@ void* address_create_from_string(const char* addressStr) {
     
     try {
         return new Address(std::string(addressStr));
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
 
 void address_destroy(void* address) {
     if (address) {
-        delete static_cast<Address*>(address);
+        try {
+            delete static_cast<Address*>(address);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
     }
 }
 
@@ -188,7 +258,11 @@ int8_t address_get_workchain(void* address) {
     
     try {
         return static_cast<Address*>(address)->getWorkchain();
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return 0;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return 0;
     }
 }
@@ -279,7 +353,11 @@ void address_set_hash_part(void* address, const uint8_t* hashPart) {
 void* private_key_create() {
     try {
         return new PrivateKey();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -292,14 +370,22 @@ void* private_key_create_from_data(const uint8_t* keyData, int length) {
     try {
         std::vector<uint8_t> data(keyData, keyData + length);
         return new PrivateKey(data);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
 
 void private_key_destroy(void* privateKey) {
     if (privateKey) {
-        delete static_cast<PrivateKey*>(privateKey);
+        try {
+            delete static_cast<PrivateKey*>(privateKey);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
     }
 }
 
@@ -308,7 +394,11 @@ void* private_key_generate() {
         PrivateKey key = PrivateKey::generate();
         // Create a new PrivateKey object and return it
         return new PrivateKey(key);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -322,7 +412,11 @@ int private_key_get_data(void* privateKey, uint8_t* buffer, int bufferSize) {
         auto data = static_cast<PrivateKey*>(privateKey)->getData();
         std::memcpy(buffer, data.data(), 32);
         return 32;
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return -1;
     }
 }
@@ -336,7 +430,11 @@ void* private_key_get_public_key(void* privateKey) {
         PublicKey publicKey = static_cast<PrivateKey*>(privateKey)->getPublicKey();
         // Create a new PublicKey object and return it
         return new PublicKey(publicKey);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -345,7 +443,11 @@ void* private_key_get_public_key(void* privateKey) {
 void* public_key_create() {
     try {
         return new PublicKey();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -358,14 +460,22 @@ void* public_key_create_from_data(const uint8_t* keyData, int length) {
     try {
         std::vector<uint8_t> data(keyData, keyData + length);
         return new PublicKey(data);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
 
 void public_key_destroy(void* publicKey) {
     if (publicKey) {
-        delete static_cast<PublicKey*>(publicKey);
+        try {
+            delete static_cast<PublicKey*>(publicKey);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
     }
 }
 
@@ -378,7 +488,11 @@ int public_key_get_data(void* publicKey, uint8_t* buffer, int bufferSize) {
         auto data = static_cast<PublicKey*>(publicKey)->getData();
         std::memcpy(buffer, data.data(), 32);
         return 32;
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return -1;
     }
 }
@@ -393,7 +507,11 @@ bool public_key_verify_signature(void* publicKey, const uint8_t* message, int me
         std::vector<uint8_t> msg(message, message + messageLen);
         std::vector<uint8_t> sig(signature, signature + signatureLen);
         return static_cast<PublicKey*>(publicKey)->verifySignature(msg, sig);
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return false;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return false;
     }
 }
@@ -414,6 +532,9 @@ void* crypto_sign(void* privateKey, const uint8_t* message, int messageLen) {
             std::memcpy(result, signature.data(), signature.size());
         }
         return result;
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
         return nullptr;
     }
@@ -450,9 +571,9 @@ char** crypto_generate_mnemonic() {
             if (!result[i]) {
                 // If allocation fails, clean up and return nullptr
                 for (size_t j = 0; j < i; ++j) {
-                    free(result[j]);
+                    free_string(result[j]);
                 }
-                free(result);
+                free_string_array(result);
                 return nullptr;
             }
         }
@@ -460,6 +581,9 @@ char** crypto_generate_mnemonic() {
         // Null-terminate the array
         result[words.size()] = nullptr;
         return result;
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
         return nullptr;
     }
@@ -480,7 +604,11 @@ void* crypto_mnemonic_to_private_key(char** mnemonic) {
         PrivateKey key = Crypto::mnemonicToPrivateKey(words);
         // Create a new PrivateKey object and return it
         return new PrivateKey(key);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -489,7 +617,11 @@ void* crypto_mnemonic_to_private_key(char** mnemonic) {
 void* boc_create() {
     try {
         return new Boc();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
@@ -504,14 +636,22 @@ void* boc_create_with_root(void* rootCell) {
         std::shared_ptr<Cell> cell(static_cast<Cell*>(rootCell));
         // Create a new Boc object with the root cell
         return new Boc(cell);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }
 
 void boc_destroy(void* boc) {
     if (boc) {
-        delete static_cast<Boc*>(boc);
+        try {
+            delete static_cast<Boc*>(boc);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
     }
 }
 
@@ -529,6 +669,9 @@ void* boc_serialize(void* boc, bool hasIdx, bool hashCRC) {
             std::memcpy(result, data.data(), data.size());
         }
         return result;
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
         return nullptr;
     }
@@ -544,7 +687,11 @@ void* boc_deserialize(const uint8_t* data, int length) {
         Boc boc = Boc::deserialize(vec);
         // Create a new Boc object and return it
         return new Boc(boc);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }

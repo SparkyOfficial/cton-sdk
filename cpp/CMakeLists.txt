@@ -44,40 +44,57 @@ target_include_directories(cton-sdk-core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Disable OpenSSL for now since we don't have a complete installation
-# In the future, you can uncomment the OpenSSL section below and properly install OpenSSL
-# 
-# # Try to find OpenSSL in common locations
-# set(OPENSSL_ROOT_DIR ${OPENSSL_ROOT_DIR} "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0")
-# set(OPENSSL_INCLUDE_DIR ${OPENSSL_INCLUDE_DIR} "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include")
-# 
-# # Try to find OpenSSL
-# find_package(OpenSSL QUIET)
-# 
-# # Conditionally include OpenSSL if found
-# if(OPENSSL_FOUND)
-#     target_include_directories(cton-sdk-core PUBLIC ${OPENSSL_INCLUDE_DIR})
-#     target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto)
-#     target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
-#     message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
-# else()
-#     # Try manual OpenSSL configuration
-#     if(EXISTS "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include/openssl")
-#         target_include_directories(cton-sdk-core PUBLIC "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include")
-#         # Check if we have precompiled libraries
-#         if(EXISTS "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/libcrypto.lib")
-#             target_link_libraries(cton-sdk-core PRIVATE "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/libcrypto.lib")
-#         elseif(EXISTS "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/lib/libcrypto.lib")
-#             target_link_libraries(cton-sdk-core PRIVATE "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/lib/libcrypto.lib")
-#         else()
-#             message(WARNING "OpenSSL libraries not found, crypto functionality will be limited")
-#         endif()
-#         target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
-#         message(STATUS "Using manual OpenSSL configuration")
-#     else()
-#         message(WARNING "OpenSSL not found, crypto functionality will be limited")
-#     endif()
-# endif()
+# Manual OpenSSL configuration
+set(OPENSSL_ROOT_DIR "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0")
+set(OPENSSL_INCLUDE_DIR "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include")
+
+# Include OpenSSL headers
+target_include_directories(cton-sdk-core PUBLIC ${OPENSSL_INCLUDE_DIR})
+
+# Try to find precompiled OpenSSL libraries in common locations
+set(OPENSSL_LIB_PATHS
+    "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/lib"
+    "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/lib64"
+    "C:/Users/Богдан/Desktop/cton-sdk/vcpkg/installed/x64-windows/lib"
+    "C:/Users/Богдан/Desktop/cton-sdk/vcpkg/installed/x64-windows/lib/manual-link"
+    "C:/OpenSSL/lib"
+)
+
+# Try to find libraries in each path
+foreach(LIB_PATH ${OPENSSL_LIB_PATHS})
+    if(EXISTS "${LIB_PATH}/libcrypto.lib")
+        target_link_libraries(cton-sdk-core PRIVATE 
+            "${LIB_PATH}/libcrypto.lib"
+            "${LIB_PATH}/libssl.lib")
+        target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
+        message(STATUS "Using OpenSSL libraries from: ${LIB_PATH}")
+        break()
+    elseif(EXISTS "${LIB_PATH}/libcrypto.a")
+        target_link_libraries(cton-sdk-core PRIVATE 
+            "${LIB_PATH}/libcrypto.a"
+            "${LIB_PATH}/libssl.a")
+        target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
+        message(STATUS "Using OpenSSL libraries from: ${LIB_PATH}")
+        break()
+    endif()
+endforeach()
+
+# If no precompiled libraries found, try to find them with find_package
+if(NOT TARGET OpenSSL::Crypto)
+    find_package(OpenSSL QUIET)
+    if(OPENSSL_FOUND)
+        target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+        target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
+        message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
+    else()
+        message(WARNING "OpenSSL libraries not found, crypto functionality will be limited")
+    endif()
+endif()
+
+# If we still don't have OpenSSL, try to build it or use a fallback
+if(NOT TARGET OpenSSL::Crypto)
+    message(STATUS "Using basic random number generation as fallback for crypto")
+endif()
 
 target_include_directories(cell_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test

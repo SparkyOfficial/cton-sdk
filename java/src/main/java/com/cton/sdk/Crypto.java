@@ -3,15 +3,13 @@
 
 package com.cton.sdk;
 
+import java.io.Closeable;
+import java.util.Arrays;
+import java.util.List;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import com.sun.jna.ptr.PointerByReference;
-
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Java обгортка для Crypto C++ класу
@@ -67,13 +65,20 @@ public class Crypto {
         
         // Створення приватного ключа з мнемоніки
         Pointer crypto_mnemonic_to_private_key(Pointer mnemonic);
+        
+        // Функція для звільнення пам'яті рядків
+        void free_string(Pointer str);
+        
+        // Функція для звільнення масиву рядків
+        void free_string_array(Pointer strArray);
     }
     
     /**
      * Представляє приватний ключ Ed25519
      */
-    public static class PrivateKey {
+    public static class PrivateKey implements Closeable {
         private Pointer nativePrivateKey;
+        private boolean closed = false;
         
         /**
          * Конструктор за замовчуванням
@@ -114,6 +119,9 @@ public class Crypto {
          * @return вектор байтів ключа
          */
         public byte[] getData() {
+            if (closed) {
+                throw new IllegalStateException("PrivateKey has been closed");
+            }
             byte[] buffer = new byte[32];
             int result = CtonLibrary.INSTANCE.private_key_get_data(nativePrivateKey, buffer, 32);
             if (result != 32) {
@@ -127,27 +135,32 @@ public class Crypto {
          * @return публічний ключ
          */
         public PublicKey getPublicKey() {
+            if (closed) {
+                throw new IllegalStateException("PrivateKey has been closed");
+            }
             Pointer ptr = CtonLibrary.INSTANCE.private_key_get_public_key(nativePrivateKey);
             return new PublicKey(ptr);
         }
         
         /**
-         * Фінальайзер для звільнення пам'яті
+         * Закрити об'єкт і звільнити нативні ресурси
          */
         @Override
-        protected void finalize() throws Throwable {
-            if (nativePrivateKey != null) {
+        public void close() {
+            if (!closed && nativePrivateKey != null) {
                 CtonLibrary.INSTANCE.private_key_destroy(nativePrivateKey);
+                nativePrivateKey = null;
+                closed = true;
             }
-            super.finalize();
         }
     }
     
     /**
      * Представляє публічний ключ Ed25519
      */
-    public static class PublicKey {
+    public static class PublicKey implements Closeable {
         private Pointer nativePublicKey;
+        private boolean closed = false;
         
         /**
          * Конструктор за замовчуванням
@@ -179,6 +192,9 @@ public class Crypto {
          * @return вектор байтів ключа
          */
         public byte[] getData() {
+            if (closed) {
+                throw new IllegalStateException("PublicKey has been closed");
+            }
             byte[] buffer = new byte[32];
             int result = CtonLibrary.INSTANCE.public_key_get_data(nativePublicKey, buffer, 32);
             if (result != 32) {
@@ -194,19 +210,23 @@ public class Crypto {
          * @return true якщо підпис коректний
          */
         public boolean verifySignature(byte[] message, byte[] signature) {
+            if (closed) {
+                throw new IllegalStateException("PublicKey has been closed");
+            }
             return CtonLibrary.INSTANCE.public_key_verify_signature(
                 nativePublicKey, message, message.length, signature, signature.length);
         }
         
         /**
-         * Фінальайзер для звільнення пам'яті
+         * Закрити об'єкт і звільнити нативні ресурси
          */
         @Override
-        protected void finalize() throws Throwable {
-            if (nativePublicKey != null) {
+        public void close() {
+            if (!closed && nativePublicKey != null) {
                 CtonLibrary.INSTANCE.public_key_destroy(nativePublicKey);
+                nativePublicKey = null;
+                closed = true;
             }
-            super.finalize();
         }
     }
     
@@ -217,6 +237,9 @@ public class Crypto {
      * @return підпис (64 байти)
      */
     public static byte[] sign(PrivateKey privateKey, byte[] message) {
+        if (privateKey.closed) {
+            throw new IllegalStateException("PrivateKey has been closed");
+        }
         Pointer signaturePtr = CtonLibrary.INSTANCE.crypto_sign(
             privateKey.nativePrivateKey, message, message.length);
         // В реальній реалізації тут має бути конвертація з Pointer в byte[]
@@ -232,6 +255,9 @@ public class Crypto {
      * @return true якщо підпис коректний
      */
     public static boolean verify(PublicKey publicKey, byte[] message, byte[] signature) {
+        if (publicKey.closed) {
+            throw new IllegalStateException("PublicKey has been closed");
+        }
         return CtonLibrary.INSTANCE.crypto_verify(
             publicKey.nativePublicKey, message, message.length, signature, signature.length);
     }

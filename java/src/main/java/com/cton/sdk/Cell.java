@@ -3,14 +3,11 @@
 
 package com.cton.sdk;
 
+import java.io.Closeable;
+
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.Structure;
-import com.sun.jna.ptr.PointerByReference;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Java обгортка для Cell C++ класу
@@ -19,7 +16,7 @@ import java.util.List;
  * - до 1023 бітів даних
  * - до 4 референсів на інші комірки
  */
-public class Cell {
+public class Cell implements Closeable {
     // Інтерфейс для взаємодії з нативною бібліотекою
     public interface CtonLibrary extends Library {
         CtonLibrary INSTANCE = (CtonLibrary) Native.load("cton-sdk-core", CtonLibrary.class);
@@ -59,6 +56,7 @@ public class Cell {
     // Make field accessible to other classes in the same package
     // Сделаем поле доступным для других классов в том же пакете
     Pointer nativeCell;
+    private boolean closed = false;
     
     /**
      * Конструктор за замовчуванням
@@ -83,6 +81,9 @@ public class Cell {
      * @return this для ланцюгових викликів
      */
     public Cell storeUInt(int bits, long value) {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         if (!CtonLibrary.INSTANCE.cell_store_uint(nativeCell, bits, value)) {
             throw new RuntimeException("Failed to store uint in cell");
         }
@@ -96,6 +97,9 @@ public class Cell {
      * @return this для ланцюгових викликів
      */
     public Cell storeInt(int bits, long value) {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         if (!CtonLibrary.INSTANCE.cell_store_int(nativeCell, bits, value)) {
             throw new RuntimeException("Failed to store int in cell");
         }
@@ -108,6 +112,9 @@ public class Cell {
      * @return this для ланцюгових викликів
      */
     public Cell storeBytes(byte[] data) {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         if (!CtonLibrary.INSTANCE.cell_store_bytes(nativeCell, data, data.length)) {
             throw new RuntimeException("Failed to store bytes in cell");
         }
@@ -120,6 +127,9 @@ public class Cell {
      * @return this для ланцюгових викликів
      */
     public Cell storeRef(Cell cell) {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         if (!CtonLibrary.INSTANCE.cell_store_ref(nativeCell, cell.nativeCell)) {
             throw new RuntimeException("Failed to store reference in cell");
         }
@@ -131,6 +141,9 @@ public class Cell {
      * @return масив байтів з даними
      */
     public byte[] getData() {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         // Спочатку отримуємо розмір даних
         int bitSize = CtonLibrary.INSTANCE.cell_get_bit_size(nativeCell);
         int byteSize = (bitSize + 7) / 8; // Округлення вгору
@@ -154,6 +167,9 @@ public class Cell {
      * @return кількість бітів
      */
     public int getBitSize() {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         return CtonLibrary.INSTANCE.cell_get_bit_size(nativeCell);
     }
     
@@ -162,6 +178,9 @@ public class Cell {
      * @return кількість референсів
      */
     public int getRefsCount() {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         return CtonLibrary.INSTANCE.cell_get_refs_count(nativeCell);
     }
     
@@ -171,6 +190,9 @@ public class Cell {
      * @return комірка-референс
      */
     public Cell getRef(int index) {
+        if (closed) {
+            throw new IllegalStateException("Cell has been closed");
+        }
         Pointer refPtr = CtonLibrary.INSTANCE.cell_get_ref(nativeCell, index);
         if (refPtr == null) {
             return null;
@@ -179,13 +201,14 @@ public class Cell {
     }
     
     /**
-     * Фінальайзер для звільнення пам'яті
+     * Закрити об'єкт і звільнити нативні ресурси
      */
     @Override
-    protected void finalize() throws Throwable {
-        if (nativeCell != null) {
+    public void close() {
+        if (!closed && nativeCell != null) {
             CtonLibrary.INSTANCE.cell_destroy(nativeCell);
+            nativeCell = null;
+            closed = true;
         }
-        super.finalize();
     }
 }

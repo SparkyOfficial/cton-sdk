@@ -143,6 +143,28 @@ namespace cton {
          * @param userFriendlyAddress user-friendly адреса
          */
         void parseUserFriendly(const std::string& userFriendlyAddress);
+        
+        /**
+         * @brief Обчислити CRC16-CCITT
+         * @param data дані для обчислення CRC
+         * @param length довжина даних
+         * @return значення CRC16
+         */
+        static uint16_t calculateCRC16(const uint8_t* data, size_t length);
+        
+        /**
+         * @brief Закодувати дані в base64url
+         * @param data дані для кодування
+         * @return закодований рядок
+         */
+        static std::string base64EncodeUrl(const std::vector<uint8_t>& data);
+        
+        /**
+         * @brief Декодувати base64url рядок
+         * @param data рядок для декодування
+         * @return декодовані дані
+         */
+        static std::vector<uint8_t> base64DecodeUrl(const std::string& data);
     };
 }
 

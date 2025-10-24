@@ -5,11 +5,15 @@
 
 package com.cton.contract;
 
-import com.cton.sdk.Address;
-import com.cton.api.TonApiClient;
-import com.google.gson.JsonObject;
-import java.math.BigInteger;
 import java.io.IOException;
+import java.math.BigInteger;
+
+import com.cton.api.TonApiClient;
+import com.cton.sdk.Address;
+import com.cton.sdk.Crypto;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
 
 /**
  * Інтерфейс для роботи з Jetton токенами відповідно до TEP-74
@@ -37,14 +41,39 @@ public class Jetton extends Contract {
         JsonObject stack = new JsonObject();
         JsonObject result = runGetMethod("get_jetton_data", stack);
         
-        // В реальній реалізації тут має бути парсинг результату
-        // В реальной реализации здесь должен быть парсинг результата
-        // In real implementation, result should be parsed here
+        // Перевіряємо чи є результат
+        // Проверяем, есть ли результат
+        // Check if there is a result
+        if (!result.has("result") || result.get("result").isJsonNull()) {
+            throw new IOException("Failed to get jetton data");
+        }
         
-        // Для демонстрації просто повертаємо 0
-        // Для демонстрации просто возвращаем 0
-        // For demonstration just return 0
-        return BigInteger.ZERO;
+        // Отримуємо стек результатів
+        // Получаем стек результатов
+        // Get result stack
+        JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 4) {
+            throw new IOException("Invalid jetton data format");
+        }
+        
+        // Загальна емісія - перший елемент стеку
+        // Total supply - first element of stack
+        // Общая эмиссия - первый элемент стека
+        JsonElement supplyElement = stackArray.get(0);
+        if (!supplyElement.isJsonArray()) {
+            throw new IOException("Invalid supply data format");
+        }
+        
+        JsonArray supplyArray = supplyElement.getAsJsonArray();
+        if (supplyArray.size() < 2) {
+            throw new IOException("Invalid supply array format");
+        }
+        
+        // Другий елемент містить значення
+        // Second element contains the value
+        // Второй элемент содержит значение
+        String supplyStr = supplyArray.get(1).getAsString();
+        return new BigInteger(supplyStr);
     }
     
     /**
@@ -56,14 +85,39 @@ public class Jetton extends Contract {
         JsonObject stack = new JsonObject();
         JsonObject result = runGetMethod("get_jetton_data", stack);
         
-        // В реальній реалізації тут має бути парсинг результату
-        // В реальной реализации здесь должен быть парсинг результата
-        // In real implementation, result should be parsed here
+        // Перевіряємо чи є результат
+        // Проверяем, есть ли результат
+        // Check if there is a result
+        if (!result.has("result") || result.get("result").isJsonNull()) {
+            throw new IOException("Failed to get jetton data");
+        }
         
-        // Для демонстрації просто повертаємо адресу контракту
-        // Для демонстрации просто возвращаем адрес контракта
-        // For demonstration just return contract address
-        return getAddress();
+        // Отримуємо стек результатів
+        // Получаем стек результатов
+        // Get result stack
+        JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 4) {
+            throw new IOException("Invalid jetton data format");
+        }
+        
+        // Адреса minter - третій елемент стеку
+        // Minter address - third element of stack
+        // Адрес minter - третий элемент стека
+        JsonElement minterElement = stackArray.get(2);
+        if (!minterElement.isJsonArray()) {
+            throw new IOException("Invalid minter data format");
+        }
+        
+        JsonArray minterArray = minterElement.getAsJsonArray();
+        if (minterArray.size() < 2) {
+            throw new IOException("Invalid minter array format");
+        }
+        
+        // Другий елемент містить адресу
+        // Second element contains the address
+        // Второй элемент содержит адрес
+        String addressStr = minterArray.get(1).getAsString();
+        return new Address(addressStr);
     }
     
     /**
@@ -77,17 +131,46 @@ public class Jetton extends Contract {
         // Додаємо адресу власника до стеку
         // Добавляем адрес владельца в стек
         // Add owner address to stack
+        JsonArray ownerArray = new JsonArray();
+        ownerArray.add("tvm.Slice");
+        ownerArray.add(owner.toRaw());
+        stack.add("address", ownerArray);
         
         JsonObject result = runGetMethod("get_wallet_data", stack);
         
-        // В реальній реалізації тут має бути парсинг результату
-        // В реальной реализации здесь должен быть парсинг результата
-        // In real implementation, result should be parsed here
+        // Перевіряємо чи є результат
+        // Проверяем, есть ли результат
+        // Check if there is a result
+        if (!result.has("result") || result.get("result").isJsonNull()) {
+            throw new IOException("Failed to get wallet data");
+        }
         
-        // Для демонстрації просто повертаємо 0
-        // Для демонстрации просто возвращаем 0
-        // For demonstration just return 0
-        return BigInteger.ZERO;
+        // Отримуємо стек результатів
+        // Получаем стек результатов
+        // Get result stack
+        JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 1) {
+            throw new IOException("Invalid wallet data format");
+        }
+        
+        // Баланс - перший елемент стеку
+        // Balance - first element of stack
+        // Баланс - первый элемент стека
+        JsonElement balanceElement = stackArray.get(0);
+        if (!balanceElement.isJsonArray()) {
+            throw new IOException("Invalid balance data format");
+        }
+        
+        JsonArray balanceArray = balanceElement.getAsJsonArray();
+        if (balanceArray.size() < 2) {
+            throw new IOException("Invalid balance array format");
+        }
+        
+        // Другий елемент містить значення
+        // Second element contains the value
+        // Второй элемент содержит значение
+        String balanceStr = balanceArray.get(1).getAsString();
+        return new BigInteger(balanceStr);
     }
     
     /**
@@ -101,16 +184,65 @@ public class Jetton extends Contract {
         // Додаємо адресу власника до стеку
         // Добавляем адрес владельца в стек
         // Add owner address to stack
+        JsonArray ownerArray = new JsonArray();
+        ownerArray.add("tvm.Slice");
+        ownerArray.add(owner.toRaw());
+        stack.add("address", ownerArray);
         
         JsonObject result = runGetMethod("get_wallet_address", stack);
         
-        // В реальній реалізації тут має бути парсинг результату
-        // В реальной реализации здесь должен быть парсинг результата
-        // In real implementation, result should be parsed here
+        // Перевіряємо чи є результат
+        // Проверяем, есть ли результат
+        // Check if there is a result
+        if (!result.has("result") || result.get("result").isJsonNull()) {
+            throw new IOException("Failed to get wallet address");
+        }
         
-        // Для демонстрації просто повертаємо адресу власника
-        // Для демонстрации просто возвращаем адрес владельца
-        // For demonstration just return owner address
-        return owner;
+        // Отримуємо стек результатів
+        // Получаем стек результатов
+        // Get result stack
+        JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 1) {
+            throw new IOException("Invalid wallet address format");
+        }
+        
+        // Адреса кошелька - перший елемент стеку
+        // Wallet address - first element of stack
+        // Адрес кошелька - первый элемент стека
+        JsonElement walletElement = stackArray.get(0);
+        if (!walletElement.isJsonArray()) {
+            throw new IOException("Invalid wallet address data format");
+        }
+        
+        JsonArray walletArray = walletElement.getAsJsonArray();
+        if (walletArray.size() < 2) {
+            throw new IOException("Invalid wallet address array format");
+        }
+        
+        // Другий елемент містить адресу
+        // Second element contains the address
+        // Второй элемент содержит адрес
+        String addressStr = walletArray.get(1).getAsString();
+        return new Address(addressStr);
+    }
+    
+    /**
+     * Transfer jettons to another address
+     * @param fromWalletAddress адреса кошелька відправника
+     * @param toAddress адреса одержувача
+     * @param amount кількість токенів
+     * @param forwardAmount сума для пересилання разом з повідомленням
+     * @param comment коментар до переказу
+     * @param privateKey приватний ключ для підпису
+     * @throws IOException якщо сталася помилка мережі
+     */
+    public void transfer(Address fromWalletAddress, Address toAddress, BigInteger amount, 
+                        BigInteger forwardAmount, String comment, Crypto.PrivateKey privateKey) throws IOException {
+        // This is a simplified implementation
+        // In a real implementation, you would need to:
+        // 1. Create a proper transfer message
+        // 2. Sign it with the private key
+        // 3. Send it via the API
+        throw new UnsupportedOperationException("Transfer functionality not fully implemented yet");
     }
 }
