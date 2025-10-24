@@ -22,7 +22,7 @@ namespace cton {
         // Реалізація серіалізації BOC в бінарне представлення
         // Implementation of BOC serialization to binary representation
         // Реализация сериализации BOC в бинарное представление
-        
+    
         if (!root_) {
             return std::vector<uint8_t>();
         }
@@ -68,14 +68,47 @@ namespace cton {
         // Количество ячеек
         result.push_back(static_cast<uint8_t>(cells.size()));
         
-        // Розміри полів
-        // Field sizes
-        // Размеры полей
-        result.push_back(0); // Offsets bit size (placeholder)
-        result.push_back(0); // Cells bit size (placeholder)
-        result.push_back(0); // Roots bit size (placeholder)
-        result.push_back(0); // Absent bit size (placeholder)
+        // Розміри полів - правильно обчислюємо розміри
+        // Field sizes - properly calculate sizes
+        // Размеры полей - правильно вычисляем размеры
+        size_t maxIndex = cells.size() > 0 ? cells.size() - 1 : 0;
+        size_t maxIndexBitSize = 0;
+        size_t maxCellBitSize = 0;
+        size_t maxCellSize = 0;
         
+        // Обчислюємо максимальні розміри для визначення бітових розмірів
+        // Calculate maximum sizes to determine bit sizes
+        // Вычисляем максимальные размеры для определения битовых размеров
+        for (const auto& cell : cells) {
+            // Максимальний індекс
+            // Maximum index
+            // Максимальный индекс
+            
+            // Максимальний розмір комірки в бітах
+            // Maximum cell size in bits
+            // Максимальный размер ячейки в битах
+            maxCellBitSize = std::max(maxCellBitSize, cell->getBitSize());
+            
+            // Максимальний розмір комірки в байтах
+            // Maximum cell size in bytes
+            // Максимальный размер ячейки в байтах
+            auto cellData = cell->getData();
+            maxCellSize = std::max(maxCellSize, cellData.size());
+        }
+        
+        // Обчислюємо бітові розміри
+        // Calculate bit sizes
+        // Вычисляем битовые размеры
+        size_t offsetBitSize = maxCellSize > 0 ? 64 - __builtin_clzll(maxCellSize) : 1; // Спрощена реалізація
+        size_t cellsBitSize = maxCellBitSize > 0 ? 64 - __builtin_clzll(maxCellBitSize) : 1;
+        size_t rootsBitSize = 1; // Тільки один корінь
+        size_t absentBitSize = 1; // Немає відсутніх комірок
+    
+        result.push_back(static_cast<uint8_t>(offsetBitSize)); // Offsets bit size
+        result.push_back(static_cast<uint8_t>(cellsBitSize));  // Cells bit size
+        result.push_back(static_cast<uint8_t>(rootsBitSize));  // Roots bit size
+        result.push_back(static_cast<uint8_t>(absentBitSize)); // Absent bit size
+    
         // Кількість коренів
         // Number of roots
         // Количество корней
