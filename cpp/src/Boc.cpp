@@ -12,6 +12,23 @@
 #include <queue>
 #include <map>
 
+// Додаткова функція для підрахунку провідних нулів
+// Additional function for counting leading zeros
+// Дополнительная функция для подсчета ведущих нулей
+#ifdef _WIN32
+#include <intrin.h>
+static inline int countLeadingZeros(unsigned long long x) {
+    if (x == 0) return 64;
+    unsigned long index;
+    _BitScanReverse64(&index, x);
+    return 63 - index;
+}
+#else
+static inline int countLeadingZeros(unsigned long long x) {
+    return __builtin_clzll(x);
+}
+#endif
+
 namespace cton {
     
     Boc::Boc() : root_(nullptr) {}
@@ -99,8 +116,8 @@ namespace cton {
         // Обчислюємо бітові розміри
         // Calculate bit sizes
         // Вычисляем битовые размеры
-        size_t offsetBitSize = maxCellSize > 0 ? 64 - __builtin_clzll(maxCellSize) : 1; // Спрощена реалізація
-        size_t cellsBitSize = maxCellBitSize > 0 ? 64 - __builtin_clzll(maxCellBitSize) : 1;
+        size_t offsetBitSize = maxCellSize > 0 ? 64 - countLeadingZeros(maxCellSize) : 1; // Спрощена реалізація
+        size_t cellsBitSize = maxCellBitSize > 0 ? 64 - countLeadingZeros(maxCellBitSize) : 1;
         size_t rootsBitSize = 1; // Тільки один корінь
         size_t absentBitSize = 1; // Немає відсутніх комірок
     
