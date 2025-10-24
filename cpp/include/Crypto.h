@@ -10,12 +10,26 @@
 #include <cstdint>
 #include <memory>
 
+// Export definitions for Windows DLL
+#ifdef _WIN32
+    #ifdef CTON_SDK_CORE_EXPORTS
+        #define CTON_SDK_CORE_API __declspec(dllexport)
+    #else
+        #define CTON_SDK_CORE_API __declspec(dllimport)
+    #endif
+#else
+    #define CTON_SDK_CORE_API
+#endif
+
 namespace cton {
+    
+    // Forward declarations
+    class CTON_SDK_CORE_API PublicKey;
     
     /**
      * @brief Представляє приватний ключ Ed25519
      */
-    class PrivateKey {
+    class CTON_SDK_CORE_API PrivateKey {
     public:
         /**
          * @brief Конструктор за замовчуванням
@@ -44,7 +58,7 @@ namespace cton {
          * @brief Отримати відповідний публічний ключ
          * @return публічний ключ
          */
-        class PublicKey getPublicKey() const;
+        PublicKey getPublicKey() const;
         
     private:
         std::vector<uint8_t> keyData_;
@@ -53,7 +67,7 @@ namespace cton {
     /**
      * @brief Представляє публічний ключ Ed25519
      */
-    class PublicKey {
+    class CTON_SDK_CORE_API PublicKey {
     public:
         /**
          * @brief Конструктор за замовчуванням
@@ -88,7 +102,7 @@ namespace cton {
     /**
      * @brief Статичні криптографічні функції
      */
-    class Crypto {
+    class CTON_SDK_CORE_API Crypto {
     public:
         /**
          * @brief Підписати повідомлення приватним ключем

@@ -9,6 +9,14 @@ namespace cton {
     
     Cell::Cell() : bitSize_(0), special_(false), depth_(0) {}
     
+    Cell::Cell(const std::vector<uint8_t>& data) 
+    : data_(data), bitSize_(data.size() * 8), special_(false), depth_(0) {}
+
+    Cell::Cell(const std::vector<uint8_t>& data, 
+               const std::vector<std::shared_ptr<Cell>>& references)
+    : data_(data), bitSize_(data.size() * 8), references_(references), 
+      special_(false), depth_(0) {}
+
     Cell::Cell(const std::vector<uint8_t>& data, size_t bitSize, 
                const std::vector<std::shared_ptr<Cell>>& references, bool special)
         : data_(data), bitSize_(bitSize), references_(references), special_(special), depth_(0) {}
@@ -113,8 +121,8 @@ namespace cton {
     
     CellBuilder& CellBuilder::storeUInt(size_t bits, uint64_t value) {
         // Перевірка коректності параметрів
-        if (bits > 64) {
-            throw std::invalid_argument("Bits count cannot exceed 64");
+        if (bits > Cell::MAX_BITS) {
+            throw std::invalid_argument("Bits count cannot exceed MAX_BITS");
         }
         
         if (bits == 0) {

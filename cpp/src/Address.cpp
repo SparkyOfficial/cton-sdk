@@ -139,17 +139,14 @@ namespace cton {
         
         // Кодуємо в base64url
         // Encode to base64url
-        static const std::string base64url_chars = 
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        
         std::string result;
         result.reserve((buffer.size() * 4 + 2) / 3);
         
         for (size_t i = 0; i < buffer.size(); i += 3) {
             uint32_t triple = (buffer[i] << 16) | 
-                             ((i + 1 < buffer.size() ? buffer[i + 1] : 0) << 8) | 
-                             (i + 2 < buffer.size() ? buffer[i + 2] : 0);
-            
+                         ((i + 1 < buffer.size() ? buffer[i + 1] : 0) << 8) | 
+                         (i + 2 < buffer.size() ? buffer[i + 2] : 0);
+        
             result.push_back(base64url_chars[(triple >> 18) & 0x3F]);
             result.push_back(base64url_chars[(triple >> 12) & 0x3F]);
             if (i + 1 < buffer.size()) {
@@ -237,9 +234,6 @@ namespace cton {
         
         // Декодуємо з base64url
         // Decode from base64url
-        static const std::string base64url_chars = 
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
-        
         std::vector<uint8_t> buffer;
         buffer.reserve(userFriendlyAddress.length() * 3 / 4);
         
@@ -252,10 +246,10 @@ namespace cton {
                 valid_ = false;
                 return;
             }
-            
+        
             accumulator = (accumulator << 6) | pos;
             bitCount += 6;
-            
+        
             if (bitCount >= 8) {
                 bitCount -= 8;
                 buffer.push_back((accumulator >> bitCount) & 0xFF);

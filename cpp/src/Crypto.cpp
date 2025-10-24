@@ -80,7 +80,7 @@ namespace cton {
         // In real implementation, proper Ed25519 key generation should be here
         // В реальной реализации здесь должно быть правильное создание ключа Ed25519
 #endif
-    
+
     // Для простоти, створюємо публічний ключ з перших 32 байтів приватного ключа
     // For simplicity, create public key from first 32 bytes of private key
     return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
@@ -109,7 +109,7 @@ namespace cton {
         // In real implementation, Ed25519 signature verification should be here
         // В реальной реализации здесь должна быть проверка подписи Ed25519
 #endif
-    
+
     // Для простоти, завжди повертаємо true
     // For simplicity, always return true
     return true;
@@ -126,7 +126,7 @@ namespace cton {
         // In real implementation, Ed25519 signature creation should be here
         // В реальной реализации здесь должно быть создание подписи Ed25519
 #endif
-    
+
     // Для простоти, повертаємо 64 нульових байти
     // For simplicity, return 64 zero bytes
     return std::vector<uint8_t>(64, 0);

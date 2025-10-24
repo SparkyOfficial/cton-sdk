@@ -10,10 +10,21 @@
 #include <memory>
 #include <cstdint>
 
+// Export definitions for Windows DLL
+#ifdef _WIN32
+    #ifdef CTON_SDK_CORE_EXPORTS
+        #define CTON_SDK_CORE_API __declspec(dllexport)
+    #else
+        #define CTON_SDK_CORE_API __declspec(dllimport)
+    #endif
+#else
+    #define CTON_SDK_CORE_API
+#endif
+
 namespace cton {
     
     // Forward declaration
-    class CellBuilder;
+    class CTON_SDK_CORE_API CellBuilder;
     
     /**
      * @brief Представляє комірку в структурі Bag of Cells (BOC)
@@ -23,7 +34,7 @@ namespace cton {
      * - до 4 референсів на інші комірки
      * - спеціальні прапорці (depth, special cells, etc.)
      */
-    class Cell {
+    class CTON_SDK_CORE_API Cell {
     public:
         // Максимальна кількість бітів в комірці
         static const size_t MAX_BITS = 1023;
@@ -88,6 +99,11 @@ namespace cton {
         // Глибина дерева для цієї комірки
         uint16_t depth_;
         
+        // Додано конструктори для тестів
+        // Added constructors for tests
+        Cell(const std::vector<uint8_t>& data);
+        Cell(const std::vector<uint8_t>& data, const std::vector<std::shared_ptr<Cell>>& references);
+        
         // Приватний конструктор для CellBuilder
         Cell(const std::vector<uint8_t>& data, size_t bitSize, 
              const std::vector<std::shared_ptr<Cell>>& references, bool special);
@@ -102,7 +118,7 @@ namespace cton {
      * CellBuilder дозволяє зручно створювати комірки,
      * додаючи до них дані та референси
      */
-    class CellBuilder {
+    class CTON_SDK_CORE_API CellBuilder {
     public:
         /**
          * @brief Конструктор за замовчуванням

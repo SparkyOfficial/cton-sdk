@@ -11,6 +11,17 @@
 #include <vector>
 #include <cstdint>
 
+// Export definitions for Windows DLL
+#ifdef _WIN32
+    #ifdef CTON_SDK_CORE_EXPORTS
+        #define CTON_SDK_CORE_API __declspec(dllexport)
+    #else
+        #define CTON_SDK_CORE_API __declspec(dllimport)
+    #endif
+#else
+    #define CTON_SDK_CORE_API
+#endif
+
 namespace cton {
     
     /**
@@ -24,7 +35,7 @@ namespace cton {
      * - raw: -1:<hex_64_chars>
      * - user-friendly: base64url encoded with checksum
      */
-    class Address {
+    class CTON_SDK_CORE_API Address {
     public:
         /**
          * @brief Конструктор за замовчуванням

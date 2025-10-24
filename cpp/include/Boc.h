@@ -10,7 +10,22 @@
 #include <memory>
 #include <cstdint>
 
+// Export definitions for Windows DLL
+#ifdef _WIN32
+    #ifdef CTON_SDK_CORE_EXPORTS
+        #define CTON_SDK_CORE_API __declspec(dllexport)
+    #else
+        #define CTON_SDK_CORE_API __declspec(dllimport)
+    #endif
+#else
+    #define CTON_SDK_CORE_API
+#endif
+
 namespace cton {
+    
+    // Forward declarations
+    class CTON_SDK_CORE_API BocParser;
+    class CTON_SDK_CORE_API BocBuilder;
     
     /**
      * @brief Представляє серіалізований Bag of Cells
@@ -18,7 +33,7 @@ namespace cton {
      * BOC (Bag of Cells) - це формат серіалізації дерева комірок (Cell)
      * в бінарне представлення для передачі по мережі або зберігання
      */
-    class Boc {
+    class CTON_SDK_CORE_API Boc {
     public:
         /**
          * @brief Конструктор за замовчуванням
@@ -75,7 +90,7 @@ namespace cton {
     /**
      * @brief Парсер для десеріалізації BOC
      */
-    class BocParser {
+    class CTON_SDK_CORE_API BocParser {
     public:
         /**
          * @brief Конструктор
@@ -116,7 +131,7 @@ namespace cton {
     /**
      * @brief Будівельник для серіалізації BOC
      */
-    class BocBuilder {
+    class CTON_SDK_CORE_API BocBuilder {
     public:
         /**
          * @brief Конструктор
