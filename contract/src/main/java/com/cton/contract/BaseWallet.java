@@ -264,16 +264,39 @@ public abstract class BaseWallet implements Wallet {
         // Get seqno
         long seqno = getSeqno();
         
+        // Створюємо повідомлення для переказу
+        // Создаем сообщение для перевода
         // Create transfer message
         Cell message = createTransfer(destination, amount, comment);
         
-        // In a real implementation, you would:
-        // 1. Create a proper wallet message with seqno
-        // 2. Sign it with the private key
-        // 3. Wrap it in an external message
-        // 4. Send it via the API
+        // Створюємо правильне повідомлення кошелька з seqno
+        // Создаем правильное сообщение кошелька с seqno
+        // Create proper wallet message with seqno
+        CellBuilder walletMessageBuilder = new CellBuilder();
+        walletMessageBuilder.storeUInt(32, seqno); // Додаємо seqno
+        walletMessageBuilder.storeRef(message); // Додаємо повідомлення переказу
         
-        // For now, just send the basic message
-        sendTransaction(message);
+        Cell walletMessage = walletMessageBuilder.build();
+        
+        // Підписуємо повідомлення приватним ключем
+        // Подписываем сообщение приватным ключом
+        // Sign message with private key
+        Boc boc = new Boc(walletMessage);
+        byte[] messageBytes = boc.serialize(true, true);
+        byte[] signature = Crypto.sign(privateKey, messageBytes);
+        
+        // Створюємо зовнішнє повідомлення з підписом
+        // Создаем внешнее сообщение с подписью
+        // Create external message with signature
+        CellBuilder externalMessageBuilder = new CellBuilder();
+        externalMessageBuilder.storeBytes(signature); // Додаємо підпис
+        externalMessageBuilder.storeRef(walletMessage); // Додаємо повідомлення кошелька
+        
+        Cell externalMessage = externalMessageBuilder.build();
+        
+        // Надсилаємо через API
+        // Отправляем через API
+        // Send through API
+        sendTransaction(externalMessage);
     }
 }
