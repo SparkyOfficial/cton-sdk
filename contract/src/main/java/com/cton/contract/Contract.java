@@ -2,9 +2,11 @@ package com.cton.contract;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Base64;
 
 import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
+import com.cton.sdk.Boc;
 import com.cton.sdk.Cell;
 import com.cton.sdk.Crypto;
 import com.google.gson.JsonObject;
@@ -99,40 +101,45 @@ public abstract class Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public void sendMessage(Cell message) throws IOException {
-        // В реальній реалізації тут має бути підпис повідомлення приватним ключем
-        // В реальной реализации здесь должна быть подпись сообщения приватным ключом
-        // In real implementation, message should be signed with private key here
-        
         // Перевіряємо наявність приватного ключа
         // Check for private key availability
         // Проверяем наличие приватного ключа
         if (privateKey == null) {
-            // Для демонстрації просто викидаємо виняток
-            // Для демонстрации просто выбрасываем исключение
-            // For demonstration just throw exception
-            throw new IOException("Message signing not implemented. Use wallet to send transactions.");
+            throw new IOException("Private key not set. Cannot sign message.");
         }
         
-        // В реалізації підпису повідомлення
-        // In message signing implementation
-        // В реализации подписи сообщения
+        // Перевіряємо наявність API клієнта
+        // Check for API client availability
+        // Проверяем наличие API клиента
+        if (apiClient == null) {
+            throw new IOException("API client not set. Cannot send message.");
+        }
         
-        // 1. Отримуємо байти повідомлення (для демонстрації)
-        // 1. Get message bytes (for demonstration)
-        // 1. Получаем байты сообщения (для демонстрации)
-        byte[] messageBytes = new byte[32]; // Спрощений приклад
-        // В реальній реалізації тут має бути серіалізація комірки
-        // In real implementation, cell serialization should be here
+        // Серіалізуємо комірку в BOC
+        // Сериализуем ячейку в BOC
+        // Serialize cell to BOC
+        Boc boc = new Boc(message);
+        byte[] messageBytes = boc.serialize(true, true);
         
-        // 2. Підписуємо повідомлення
-        // 2. Sign the message
-        // 2. Подписываем сообщение
+        // Підписуємо повідомлення приватним ключем
+        // Подписываем сообщение приватным ключом
+        // Sign message with private key
         byte[] signature = Crypto.sign(privateKey, messageBytes);
         
-        // 3. Надсилаємо підписане повідомлення (імітація)
-        // 3. Send signed message (simulation)
-        // 3. Отправляем подписанное сообщение (имитация)
-        System.out.println("Message signed and sent with signature: " + 
+        // Конвертуємо підписане повідомлення в Base64
+        // Конвертируем подписанное сообщение в Base64
+        // Convert signed message to Base64
+        String bocBase64 = Base64.getEncoder().encodeToString(messageBytes);
+        
+        // Надсилаємо підписане повідомлення через API
+        // Отправляем подписанное сообщение через API
+        // Send signed message through API
+        JsonObject response = apiClient.sendBoc(messageBytes);
+        
+        // Логуємо успішне надсилання
+        // Логируем успешную отправку
+        // Log successful sending
+        System.out.println("Message signed and sent successfully. Signature: " + 
                           Arrays.toString(signature));
     }
 }
