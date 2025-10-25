@@ -5,14 +5,21 @@
 
 package com.cton.api.liteclient;
 
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-import okhttp3.*;
-import okio.ByteString;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
-import java.util.Base64;
 import java.util.concurrent.TimeUnit;
+
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
+import okhttp3.ResponseBody;
+import okhttp3.WebSocket;
+import okhttp3.WebSocketListener;
 
 /**
  * Реалізація клієнта для прямого з'єднання з TON LiteServer

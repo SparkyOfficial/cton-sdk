@@ -87,14 +87,10 @@ public abstract class Contract {
             throw new IOException("API client not set");
         }
         
-        // В реальній реалізації тут має бути виклик get-методу контракту
-        // В реальной реализации здесь должен быть вызов get-метода контракта
-        // In real implementation, contract get-method should be called here
-        
-        // Для демонстрації просто повертаємо порожній об'єкт
-        // Для демонстрации просто возвращаем пустой объект
-        // For demonstration just return empty object
-        return new JsonObject();
+        // Викликаємо get-метод контракту через API клієнт
+        // Вызываем get-метод контракта через API клиент
+        // Call contract get-method through API client
+        return apiClient.runGetMethod(address.toRaw(), methodName, stack);
     }
     
     /**
