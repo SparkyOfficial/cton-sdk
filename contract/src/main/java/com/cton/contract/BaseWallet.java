@@ -20,10 +20,29 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 /**
- * Базова реалізація кошелька
+ * Базова реалізація кошелька для TON блокчейну
  * 
- * Base wallet implementation
- * Базовая реализация кошелька
+ * Цей клас надає основну функціональність для роботи з TON кошельками:
+ * - Отримання балансу адреси
+ * - Створення транзакцій
+ * - Відправка повідомлень
+ * - Робота з get-методами смарт-контрактів
+ * 
+ * Base wallet implementation for TON blockchain
+ * 
+ * This class provides core functionality for working with TON wallets:
+ * - Getting address balance
+ * - Creating transactions
+ * - Sending messages
+ * - Working with smart contract get-methods
+ * 
+ * Базовая реализация кошелька для TON блокчейна
+ * 
+ * Этот класс предоставляет основной функционал для работы с TON кошельками:
+ * - Получение баланса адреса
+ * - Создание транзакций
+ * - Отправка сообщений
+ * - Работа с get-методами смарт-контрактов
  */
 public abstract class BaseWallet implements Wallet {
     protected final Address address;

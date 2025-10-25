@@ -8,9 +8,11 @@ package com.cton.api.liteclient;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import okhttp3.*;
+import okio.ByteString;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 import java.util.Base64;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Реалізація клієнта для прямого з'єднання з TON LiteServer
@@ -20,14 +22,19 @@ import java.util.Base64;
  */
 public class TonLiteClient implements LiteClient {
     private final OkHttpClient httpClient;
+    private WebSocket webSocket;
     private String baseUrl;
     private boolean connected;
+    private final Object lock = new Object();
     
     /**
      * Конструктор
      */
     public TonLiteClient() {
-        this.httpClient = new OkHttpClient();
+        this.httpClient = new OkHttpClient.Builder()
+            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(30, TimeUnit.SECONDS)
+            .build();
         this.connected = false;
     }
     
@@ -36,20 +43,51 @@ public class TonLiteClient implements LiteClient {
         // Формуємо URL для підключення
         // Формируем URL для подключения
         // Build URL for connection
-        this.baseUrl = "http://" + host + ":" + port;
+        this.baseUrl = "ws://" + host + ":" + port + "/ws";
         this.connected = true;
         
-        // В реальній реалізації тут має бути встановлення WebSocket з'єднання
-        // В реальной реализации здесь должно быть установление WebSocket соединения
-        // In real implementation, WebSocket connection should be established here
+        // Встановлюємо WebSocket з'єднання
+        // Устанавливаем WebSocket соединение
+        // Establish WebSocket connection
+        Request request = new Request.Builder()
+            .url(baseUrl)
+            .build();
+            
+        WebSocketListener listener = new WebSocketListener() {
+            @Override
+            public void onOpen(WebSocket webSocket, Response response) {
+                synchronized (lock) {
+                    connected = true;
+                }
+            }
+            
+            @Override
+            public void onFailure(WebSocket webSocket, Throwable t, Response response) {
+                synchronized (lock) {
+                    connected = false;
+                }
+            }
+            
+            @Override
+            public void onClosed(WebSocket webSocket, int code, String reason) {
+                synchronized (lock) {
+                    connected = false;
+                }
+            }
+        };
+        
+        this.webSocket = httpClient.newWebSocket(request, listener);
     }
     
     @Override
     public void disconnect() {
+        if (this.webSocket != null) {
+            this.webSocket.close(1000, "Client disconnect");
+        }
         this.connected = false;
-        // В реальній реалізації тут має бути закриття WebSocket з'єднання
-        // В реальной реализации здесь должно быть закрытие WebSocket соединения
-        // In real implementation, WebSocket connection should be closed here
+        // Закриваємо WebSocket з'єднання
+        // Закрываем WebSocket соединение
+        // Close WebSocket connection
     }
     
     @Override
@@ -66,7 +104,7 @@ public class TonLiteClient implements LiteClient {
         // Формуємо URL запиту
         // Формируем URL запроса
         // Build request URL
-        String url = baseUrl + "/runGetMethod";
+        String url = baseUrl.replace("/ws", "") + "/runGetMethod";
         
         // Створюємо JSON тіло запиту
         // Создаем JSON тело запроса
@@ -125,7 +163,7 @@ public class TonLiteClient implements LiteClient {
         // Формуємо URL запиту
         // Формируем URL запроса
         // Build request URL
-        String url = baseUrl + "/getBlockHeader";
+        String url = baseUrl.replace("/ws", "") + "/getBlockHeader";
         
         // Створюємо JSON тіло запиту
         // Создаем JSON тело запроса
@@ -173,7 +211,7 @@ public class TonLiteClient implements LiteClient {
         // Формуємо URL запиту
         // Формируем URL запроса
         // Build request URL
-        String url = baseUrl + "/getBlockTransactions";
+        String url = baseUrl.replace("/ws", "") + "/getBlockTransactions";
         
         // Створюємо JSON тіло запиту
         // Создаем JSON тело запроса
@@ -221,7 +259,7 @@ public class TonLiteClient implements LiteClient {
         // Формуємо URL запиту
         // Формируем URL запроса
         // Build request URL
-        String url = baseUrl + "/sendExternalMessage";
+        String url = baseUrl.replace("/ws", "") + "/sendExternalMessage";
         
         // Створюємо JSON тіло запиту
         // Создаем JSON тело запроса
