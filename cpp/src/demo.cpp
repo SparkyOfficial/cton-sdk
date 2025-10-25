@@ -1,4 +1,4 @@
-// main.cpp - демонстрація всіх можливостей CTON-SDK
+// demo.cpp - демонстрація всіх можливостей CTON-SDK
 // Author: Андрій Будильников (Sparky)
 // Demonstration of all CTON-SDK capabilities
 // Демонстрация всех возможностей CTON-SDK
@@ -55,8 +55,8 @@ int main() {
         // 3. Mnemonic phrase demonstration
         // 3. Демонстрация мнемонических фраз
         std::cout << "\n3. Mnemonic Operations:" << std::endl;
-        auto mnemonic = Mnemonic::generate(24);
-        std::cout << "   Generated 24-word mnemonic phrase" << std::endl;
+        auto mnemonic = Mnemonic::generate(12); // Generate 12-word mnemonic for demo
+        std::cout << "   Generated 12-word mnemonic phrase" << std::endl;
         std::cout << "   First 3 words: ";
         for (int i = 0; i < 3 && i < mnemonic.size(); ++i) {
             std::cout << mnemonic[i] << " ";

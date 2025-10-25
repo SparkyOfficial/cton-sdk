@@ -8,19 +8,13 @@
 
 namespace cton {
     
-    Cell::Cell() : bitSize_(0), special_(false), depth_(0) {}
+    Cell::Cell() : bitSize_(0), isSpecial_(false) {}
     
-    Cell::Cell(const std::vector<uint8_t>& data) 
-    : data_(data), bitSize_(data.size() * 8), special_(false), depth_(0) {}
-
     Cell::Cell(const std::vector<uint8_t>& data, 
-               const std::vector<std::shared_ptr<Cell>>& references)
-    : data_(data), bitSize_(data.size() * 8), references_(references), 
-      special_(false), depth_(0) {}
-
-    Cell::Cell(const std::vector<uint8_t>& data, size_t bitSize, 
-               const std::vector<std::shared_ptr<Cell>>& references, bool special)
-        : data_(data), bitSize_(bitSize), references_(references), special_(special), depth_(0) {
+               size_t bitSize, 
+               const std::vector<std::shared_ptr<Cell>>& references,
+               bool isSpecial)
+        : data_(data), bitSize_(bitSize), references_(references), isSpecial_(isSpecial) {
         // Validate parameters
         if (bitSize > MAX_BITS) {
             throw std::invalid_argument("Bit size exceeds maximum allowed");
@@ -37,7 +31,47 @@ namespace cton {
         }
     }
     
-    Cell::~Cell() {}
+    void Cell::storeUInt(size_t bits, uint64_t value) {
+        CellBuilder builder;
+        builder.storeUInt(bits, value);
+        auto builtCell = builder.build();
+        
+        // Copy data from built cell to this cell
+        data_ = builtCell->data_;
+        bitSize_ = builtCell->bitSize_;
+    }
+    
+    void Cell::storeInt(size_t bits, int64_t value) {
+        CellBuilder builder;
+        builder.storeInt(bits, value);
+        auto builtCell = builder.build();
+        
+        // Copy data from built cell to this cell
+        data_ = builtCell->data_;
+        bitSize_ = builtCell->bitSize_;
+    }
+    
+    void Cell::storeBytes(const std::vector<uint8_t>& bytes) {
+        CellBuilder builder;
+        builder.storeBytes(bytes);
+        auto builtCell = builder.build();
+        
+        // Copy data from built cell to this cell
+        data_ = builtCell->data_;
+        bitSize_ = builtCell->bitSize_;
+    }
+    
+    void Cell::addReference(std::shared_ptr<Cell> cell) {
+        if (!cell) {
+            throw std::invalid_argument("Cannot add null reference");
+        }
+        
+        if (references_.size() >= MAX_REFS) {
+            throw std::overflow_error("Maximum number of references reached");
+        }
+        
+        references_.push_back(cell);
+    }
     
     std::vector<uint8_t> Cell::getData() const {
         return data_;
@@ -60,89 +94,13 @@ namespace cton {
     }
     
     bool Cell::isSpecial() const {
-        return special_;
+        return isSpecial_;
     }
     
-    bool Cell::storeUInt(size_t bits, uint64_t value) {
-        try {
-            CellBuilder builder;
-            builder.storeUInt(bits, value);
-            auto builtCell = builder.build();
-            
-            // Copy data from built cell to this cell
-            data_ = builtCell->data_;
-            bitSize_ = builtCell->bitSize_;
-            return true;
-        } catch (const std::exception& e) {
-            // Log error or handle it appropriately
-            return false;
-        } catch (...) {
-            // Handle any other unexpected exceptions
-            return false;
+    void Cell::checkCapacity(size_t bitCount) {
+        if (bitSize_ + bitCount > MAX_BITS) {
+            throw std::overflow_error("Not enough space in cell");
         }
-    }
-    
-    bool Cell::storeInt(size_t bits, int64_t value) {
-        try {
-            CellBuilder builder;
-            builder.storeInt(bits, value);
-            auto builtCell = builder.build();
-            
-            // Copy data from built cell to this cell
-            data_ = builtCell->data_;
-            bitSize_ = builtCell->bitSize_;
-            return true;
-        } catch (const std::exception& e) {
-            // Log error or handle it appropriately
-            return false;
-        } catch (...) {
-            // Handle any other unexpected exceptions
-            return false;
-        }
-    }
-    
-    bool Cell::storeBytes(const std::vector<uint8_t>& data) {
-        try {
-            CellBuilder builder;
-            builder.storeBytes(data);
-            auto builtCell = builder.build();
-            
-            // Copy data from built cell to this cell
-            data_ = builtCell->data_;
-            bitSize_ = builtCell->bitSize_;
-            return true;
-        } catch (const std::exception& e) {
-            // Log error or handle it appropriately
-            return false;
-        } catch (...) {
-            // Handle any other unexpected exceptions
-            return false;
-        }
-    }
-    
-    bool Cell::addReference(std::shared_ptr<Cell> cell) {
-        if (!cell) {
-            return false;
-        }
-        
-        if (references_.size() >= MAX_REFS) {
-            return false; // Maximum number of references reached
-        }
-        
-        references_.push_back(cell);
-        return true;
-    }
-    
-    std::shared_ptr<Cell> Cell::getReference(size_t index) const {
-        if (index >= references_.size()) {
-            return nullptr;
-        }
-        
-        return references_[index];
-    }
-    
-    size_t Cell::getReferencesCount() const {
-        return references_.size();
     }
     
     CellBuilder::CellBuilder() : bitOffset_(0) {}

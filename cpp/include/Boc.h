@@ -9,6 +9,7 @@
 #include <vector>
 #include <memory>
 #include <cstdint>
+#include <unordered_set>
 
 // Export definitions for Windows DLL
 #ifdef _WIN32
@@ -84,7 +85,7 @@ namespace cton {
          */
         void collectCells(std::shared_ptr<Cell> cell, 
                          std::vector<std::shared_ptr<Cell>>& cells,
-                         std::vector<std::shared_ptr<Cell>>& visited) const;
+                         std::unordered_set<std::shared_ptr<Cell>>& visited) const;
     };
     
     /**

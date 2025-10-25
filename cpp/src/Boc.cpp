@@ -11,6 +11,8 @@
 #include <set>
 #include <queue>
 #include <map>
+#include <unordered_set>
+#include <unordered_map>
 
 // Додаткова функція для підрахунку провідних нулів
 // Additional function for counting leading zeros
@@ -44,25 +46,27 @@ namespace cton {
             return std::vector<uint8_t>();
         }
         
-        // Збираємо всі комірки в дереві
-        // Collect all cells in the tree
-        // Собираем все ячейки в дереве
+        // Оптимізована колекція комірок з використанням unordered_set для швидшого пошуку
+        // Optimized cell collection using unordered_set for faster lookup
+        // Оптимизированная коллекция ячеек с использованием unordered_set для быстрого поиска
         std::vector<std::shared_ptr<Cell>> cells;
-        std::vector<std::shared_ptr<Cell>> visited;
+        std::unordered_set<std::shared_ptr<Cell>> visited;
         collectCells(root_, cells, visited);
         
-        // Створюємо відображення комірок в індекси
-        // Create cell to index mapping
-        // Создаем отображение ячеек в индексы
-        std::map<std::shared_ptr<Cell>, size_t> cellIndices;
+        // Створюємо відображення комірок в індекси з використанням unordered_map
+        // Create cell to index mapping using unordered_map
+        // Создаем отображение ячеек в индексы с использованием unordered_map
+        std::unordered_map<std::shared_ptr<Cell>, size_t> cellIndices;
+        cellIndices.reserve(cells.size());
         for (size_t i = 0; i < cells.size(); ++i) {
             cellIndices[cells[i]] = i;
         }
         
-        // Створюємо буфер для результату
-        // Create buffer for result
-        // Создаем буфер для результата
+        // Резервуємо пам'ять для результату для кращої продуктивності
+        // Reserve memory for result for better performance
+        // Резервируем память для результата для лучшей производительности
         std::vector<uint8_t> result;
+        result.reserve(1024); // Початковий розмір резервування / Initial reservation size / Начальный размер резервирования
         
         // Заголовок BOC
         // BOC header
@@ -89,6 +93,7 @@ namespace cton {
         // Encode cell count
         // Кодируем количество ячеек
         std::vector<uint8_t> cellCountBytes;
+        cellCountBytes.reserve(8); // Резервуємо пам'ять / Reserve memory / Резервируем память
         size_t tempCount = cellCount;
         do {
             cellCountBytes.push_back(tempCount & 0x7F);
@@ -172,10 +177,21 @@ namespace cton {
         // Cell data
         // Данные ячеек
         std::vector<std::vector<uint8_t>> cellData;
+        cellData.reserve(cells.size()); // Резервуємо пам'ять / Reserve memory / Резервируем память
         std::vector<size_t> cellSizes;
+        cellSizes.reserve(cells.size()); // Резервуємо пам'ять / Reserve memory / Резервируем память
         
-        for (const auto& cell : cells) {
-            std::vector<uint8_t> data;
+        // Резервуємо пам'ять для cellData
+        // Reserve memory for cellData
+        // Резервируем память для cellData
+        for (size_t i = 0; i < cells.size(); ++i) {
+            cellData.emplace_back();
+            cellData.back().reserve(128); // Приблизний розмір / Approximate size / Приблизительный размер
+        }
+        
+        for (size_t i = 0; i < cells.size(); ++i) {
+            const auto& cell = cells[i];
+            auto& data = cellData[i];
             
             // Додаємо інформацію про комірку
             // Add cell information
@@ -226,6 +242,7 @@ namespace cton {
                         // Кодируем индекс ссылки
                         size_t refIndex = it->second;
                         std::vector<uint8_t> indexBytes;
+                        indexBytes.reserve(8); // Резервуємо пам'ять / Reserve memory / Резервируем память
                         size_t tempIndex = refIndex;
                         do {
                             indexBytes.push_back(tempIndex & 0x7F);
@@ -234,8 +251,8 @@ namespace cton {
                         
                         // Встановлюємо старший біт для всіх байтів, окрім останнього
                         // Set high bit for all bytes except the last one
-                        for (size_t i = 0; i < indexBytes.size() - 1; ++i) {
-                            indexBytes[i] |= 0x80;
+                        for (size_t j = 0; j < indexBytes.size() - 1; ++j) {
+                            indexBytes[j] |= 0x80;
                         }
                         
                         // Додаємо в зворотньому порядку
@@ -247,7 +264,6 @@ namespace cton {
                 }
             }
             
-            cellData.push_back(data);
             cellSizes.push_back(data.size());
         }
         
@@ -261,6 +277,7 @@ namespace cton {
                 // Encode offset
                 // Кодируем смещение
                 std::vector<uint8_t> offsetBytes;
+                offsetBytes.reserve(8); // Резервуємо пам'ять / Reserve memory / Резервируем память
                 size_t tempOffset = offset;
                 do {
                     offsetBytes.push_back(tempOffset & 0x7F);
@@ -318,21 +335,18 @@ namespace cton {
     
     void Boc::collectCells(std::shared_ptr<Cell> cell, 
                          std::vector<std::shared_ptr<Cell>>& cells,
-                         std::vector<std::shared_ptr<Cell>>& visited) const {
+                         std::unordered_set<std::shared_ptr<Cell>>& visited) const {
         // Перевірка чи комірка вже відвідана
         // Check if cell is already visited
         // Проверка, посещена ли ячейка уже
-        
-        for (const auto& visitedCell : visited) {
-            if (visitedCell == cell) {
-                return; // Комірка вже відвідана / Cell already visited / Ячейка уже посещена
-            }
+        if (visited.find(cell) != visited.end()) {
+            return; // Комірка вже відвідана / Cell already visited / Ячейка уже посещена
         }
         
         // Додати комірку до відвіданих
         // Add cell to visited
         // Добавить ячейку в посещенные
-        visited.push_back(cell);
+        visited.insert(cell);
         
         // Додати комірку до колекції
         // Add cell to collection

@@ -5,6 +5,7 @@
 // Реализация криптографических функций Ed25519 для TON
 
 #include "../include/Crypto.h"
+#include "../include/Mnemonic.h"
 #include <stdexcept>
 #include <random>
 #include <ctime>
@@ -305,13 +306,10 @@ namespace cton {
         // BIP-39 mnemonic generation
         // Генерация мнемонической фразы BIP-39
     
-        // Для простоти, повертаємо фіксовану фразу
-        // For simplicity, return fixed phrase
-        return std::vector<std::string>{
-            "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract",
-            "absurd", "abuse", "access", "accident", "account", "accuse", "achieve", "acid",
-            "acoustic", "acquire", "across", "act", "action", "actor", "actress", "actual"
-        };
+        // Використовуємо Mnemonic клас для генерації
+        // Use Mnemonic class for generation
+        // Используем класс Mnemonic для генерации
+        return Mnemonic::generate(24);
     }
     
     PrivateKey Crypto::mnemonicToPrivateKey(const std::vector<std::string>& mnemonic) {
@@ -319,9 +317,27 @@ namespace cton {
         // Mnemonic to private key conversion
         // Преобразование мнемоники в приватный ключ
     
-        // Для простоти, генеруємо випадковий ключ
-        // For simplicity, generate random key
-        return PrivateKey::generate();
+        // Перевіряємо валідність мнемоніки
+        // Validate mnemonic
+        // Проверяем валидность мнемоники
+        if (!Mnemonic::isValid(mnemonic)) {
+            throw std::invalid_argument("Invalid mnemonic phrase");
+        }
+        
+        // Конвертуємо мнемоніку в seed
+        // Convert mnemonic to seed
+        // Конвертируем мнемонику в сид
+        auto seed = Mnemonic::toSeed(mnemonic);
+        
+        // Для простоти, використовуємо перші 32 байти seed як приватний ключ
+        // For simplicity, use first 32 bytes of seed as private key
+        // Для простоты, используем первые 32 байта сида как приватный ключ
+        if (seed.size() >= 32) {
+            return PrivateKey(std::vector<uint8_t>(seed.begin(), seed.begin() + 32));
+        } else {
+            // Fallback to random key generation
+            return PrivateKey::generate();
+        }
     }
 
 }

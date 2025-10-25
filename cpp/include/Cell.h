@@ -1,7 +1,6 @@
-// Cell.h - основна структура даних для TON
+// Cell.h - представлення комірки TON
 // Author: Андрій Будильников (Sparky)
-// Основна структура даних TON - Cell (комірка)
-// представляє вузол в дереві Bag of Cells (BOC)
+// Cell - основна одиниця даних в TON
 
 #ifndef CTON_CELL_H
 #define CTON_CELL_H
@@ -27,19 +26,17 @@ namespace cton {
     class CTON_SDK_CORE_API CellBuilder;
     
     /**
-     * @brief Представляє комірку в структурі Bag of Cells (BOC)
+     * @brief Представляє комірку TON - основну одиницю даних
      * 
-     * Cell - це основна одиниця даних в TON, яка може містити:
-     * - до 1023 бітів даних
-     * - до 4 референсів на інші комірки
-     * - спеціальні прапорці (depth, special cells, etc.)
+     * Cell містить до 1023 бітів даних і до 4 посилань на інші комірки
      */
     class CTON_SDK_CORE_API Cell {
+        friend class CellBuilder;
+        
     public:
-        // Максимальна кількість бітів в комірці
-        static const size_t MAX_BITS = 1023;
-        // Максимальна кількість референсів
-        static const size_t MAX_REFS = 4;
+        // Константи для обмежень комірки
+        static const size_t MAX_BITS = 1023;  // Максимальна кількість бітів у комірці
+        static const size_t MAX_REFS = 4;     // Максимальна кількість посилань
         
         /**
          * @brief Конструктор за замовчуванням
@@ -47,76 +44,82 @@ namespace cton {
         Cell();
         
         /**
-         * @brief Деструктор
+         * @brief Конструктор з даних
+         * @param data бінарні дані
+         * @param bitSize розмір даних у бітах
+         * @param references посилання на інші комірки
+         * @param isSpecial чи є комірка спеціальною
          */
-        ~Cell();
+        Cell(const std::vector<uint8_t>& data, 
+             size_t bitSize, 
+             const std::vector<std::shared_ptr<Cell>>& references,
+             bool isSpecial = false);
         
         /**
-         * @brief Отримати дані з комірки
-         * @return вектор байтів з даними
+         * @brief Зберегти беззнакове ціле
+         * @param bitCount кількість бітів
+         * @param value значення
+         */
+        void storeUInt(size_t bitCount, uint64_t value);
+        
+        /**
+         * @brief Зберегти знакове ціле
+         * @param bitCount кількість бітів
+         * @param value значення
+         */
+        void storeInt(size_t bitCount, int64_t value);
+        
+        /**
+         * @brief Зберегти байти
+         * @param bytes вектор байтів
+         */
+        void storeBytes(const std::vector<uint8_t>& bytes);
+        
+        /**
+         * @brief Додати посилання на комірку
+         * @param cell комірка для посилання
+         */
+        void addReference(std::shared_ptr<Cell> cell);
+        
+        /**
+         * @brief Отримати дані комірки
+         * @return вектор байтів
          */
         std::vector<uint8_t> getData() const;
         
         /**
-         * @brief Отримати кількість бітів в комірці
-         * @return кількість бітів
+         * @brief Отримати розмір даних у бітах
+         * @return розмір у бітах
          */
         size_t getBitSize() const;
         
         /**
-         * @brief Отримати референси на інші комірки
-         * @return вектор слабких посилань на комірки
+         * @brief Отримати посилання
+         * @return вектор посилань
          */
         std::vector<std::weak_ptr<Cell>> getReferences() const;
         
         /**
          * @brief Перевірити чи є комірка спеціальною
-         * @return true якщо комірка спеціальна
+         * @return true якщо спеціальна
          */
         bool isSpecial() const;
         
-        // Додано методи для інтерфейсу
-        bool storeUInt(size_t bits, uint64_t value);
-        bool storeInt(size_t bits, int64_t value);
-        bool storeBytes(const std::vector<uint8_t>& data);
-        
-        // Методи для роботи з референсами
-        bool addReference(std::shared_ptr<Cell> cell);
-        std::shared_ptr<Cell> getReference(size_t index) const;
-        size_t getReferencesCount() const;
-        
     private:
-        // Дані комірки
         std::vector<uint8_t> data_;
         size_t bitSize_;
-        
-        // Референси на інші комірки (використовуємо shared_ptr для управління пам'яттю)
         std::vector<std::shared_ptr<Cell>> references_;
+        bool isSpecial_;
         
-        // Спеціальні прапорці
-        bool special_;
-        
-        // Глибина дерева для цієї комірки
-        uint16_t depth_;
-        
-        // Додано конструктори для тестів
-        // Added constructors for tests
-        Cell(const std::vector<uint8_t>& data);
-        Cell(const std::vector<uint8_t>& data, const std::vector<std::shared_ptr<Cell>>& references);
-        
-        // Приватний конструктор для CellBuilder
-        Cell(const std::vector<uint8_t>& data, size_t bitSize, 
-             const std::vector<std::shared_ptr<Cell>>& references, bool special);
-        
-        // Дружній клас для побудови комірок
-        friend class CellBuilder;
+        /**
+         * @brief Перевірити чи можна зберегти біти
+         * @param bitCount кількість бітів для збереження
+         */
+        void checkCapacity(size_t bitCount);
     };
     
     /**
-     * @brief Будівельник комірок для зручного створення Cell
-     * 
-     * CellBuilder дозволяє зручно створювати комірки,
-     * додаючи до них дані та референси
+     * @brief Будівельник для створення комірок
      */
     class CTON_SDK_CORE_API CellBuilder {
     public:
@@ -126,49 +129,47 @@ namespace cton {
         CellBuilder();
         
         /**
-         * @brief Додати беззнакове ціле число до комірки
-         * @param bits кількість бітів для зберігання
-         * @param value значення для зберігання
-         * @return посилання на цей будівельник для ланцюгових викликів
+         * @brief Зберегти беззнакове ціле
+         * @param bitCount кількість бітів
+         * @param value значення
+         * @return посилання на себе для ланцюжкових викликів
          */
-        CellBuilder& storeUInt(size_t bits, uint64_t value);
+        CellBuilder& storeUInt(size_t bitCount, uint64_t value);
         
         /**
-         * @brief Додати знакове ціле число до комірки
-         * @param bits кількість бітів для зберігання
-         * @param value значення для зберігання
-         * @return посилання на цей будівельник для ланцюгових викликів
+         * @brief Зберегти знакове ціле
+         * @param bitCount кількість бітів
+         * @param value значення
+         * @return посилання на себе для ланцюжкових викликів
          */
-        CellBuilder& storeInt(size_t bits, int64_t value);
+        CellBuilder& storeInt(size_t bitCount, int64_t value);
         
         /**
-         * @brief Додати байти до комірки
-         * @param data дані для зберігання
-         * @return посилання на цей будівельник для ланцюгових викликів
+         * @brief Зберегти байти
+         * @param bytes вектор байтів
+         * @return посилання на себе для ланцюжкових викликів
          */
-        CellBuilder& storeBytes(const std::vector<uint8_t>& data);
+        CellBuilder& storeBytes(const std::vector<uint8_t>& bytes);
         
         /**
-         * @brief Додати референс на іншу комірку
-         * @param cell комірка для додавання як референс
-         * @return посилання на цей будівельник для ланцюгових викликів
+         * @brief Зберегти посилання на комірку
+         * @param cell комірка для посилання
+         * @return посилання на себе для ланцюжкових викликів
          */
         CellBuilder& storeRef(std::shared_ptr<Cell> cell);
         
         /**
-         * @brief Побудувати комірку з накопичених даних
-         * @return спільне посилання на створену комірку
+         * @brief Побудувати комірку
+         * @return створена комірка
          */
         std::shared_ptr<Cell> build();
         
     private:
-        // Накопичувач даних
         std::vector<uint8_t> buffer_;
         size_t bitOffset_;
-        
-        // Накопичувач референсів
         std::vector<std::shared_ptr<Cell>> references_;
     };
+    
 }
 
 #endif // CTON_CELL_H

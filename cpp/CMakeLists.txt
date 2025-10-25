@@ -13,6 +13,7 @@ file(GLOB_RECURSE HEADERS "include/*.h" "include/*.hpp")
 # Exclude main.cpp and test files from library sources
 list(FILTER SOURCES EXCLUDE REGEX "main.cpp")
 list(FILTER SOURCES EXCLUDE REGEX "test")
+list(FILTER SOURCES EXCLUDE REGEX "demo.cpp")
 
 # Create library
 add_library(cton-sdk-core SHARED ${SOURCES} ${HEADERS})
@@ -23,6 +24,10 @@ target_compile_definitions(cton-sdk-core PRIVATE CTON_SDK_CORE_EXPORTS)
 # Create test executable
 add_executable(cton-sdk-test src/main.cpp)
 target_link_libraries(cton-sdk-test cton-sdk-core)
+
+# Create demo executable
+add_executable(cton-sdk-demo src/demo.cpp)
+target_link_libraries(cton-sdk-demo cton-sdk-core)
 
 # Create unit test executables
 add_executable(cell_test test/CellTest.cpp)
@@ -52,9 +57,21 @@ target_link_libraries(ed25519_test cton-sdk-core)
 add_executable(boc_compliance_test test/BocComplianceTest.cpp)
 target_link_libraries(boc_compliance_test cton-sdk-core)
 
-# Create final verification test executable
-add_executable(final_verification test/final_verification.cpp)
-target_link_libraries(final_verification cton-sdk-core)
+# Create mnemonic test executable
+add_executable(mnemonic_test test/MnemonicTest.cpp)
+target_link_libraries(mnemonic_test cton-sdk-core)
+
+# Create BOC performance test executable
+add_executable(boc_performance_test test/BocPerformanceTest.cpp)
+target_link_libraries(boc_performance_test cton-sdk-core)
+
+# Create benchmark test executable
+add_executable(benchmark_test test/BenchmarkTest.cpp)
+target_link_libraries(benchmark_test cton-sdk-core)
+
+# Create integration test executable
+add_executable(integration_test test/IntegrationTest.cpp)
+target_link_libraries(integration_test cton-sdk-core)
 
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 
@@ -113,6 +130,16 @@ if(NOT TARGET OpenSSL::Crypto)
     message(STATUS "Using basic random number generation as fallback for crypto")
 endif()
 
+target_include_directories(cton-sdk-test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(cton-sdk-demo PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 target_include_directories(cell_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -153,7 +180,22 @@ target_include_directories(boc_compliance_test PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_include_directories(final_verification PUBLIC 
+target_include_directories(mnemonic_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(boc_performance_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(benchmark_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(integration_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )

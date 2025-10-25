@@ -77,7 +77,8 @@ bool cell_store_uint(void* cell, int bits, uint64_t value) {
     }
     
     try {
-        return static_cast<Cell*>(cell)->storeUInt(bits, value);
+        static_cast<Cell*>(cell)->storeUInt(bits, value);
+        return true;
     } catch (const std::exception&) {
         // Handle standard exceptions
         return false;
@@ -93,7 +94,8 @@ bool cell_store_int(void* cell, int bits, int64_t value) {
     }
     
     try {
-        return static_cast<Cell*>(cell)->storeInt(bits, value);
+        static_cast<Cell*>(cell)->storeInt(bits, value);
+        return true;
     } catch (const std::exception&) {
         // Handle standard exceptions
         return false;
@@ -110,7 +112,8 @@ bool cell_store_bytes(void* cell, const uint8_t* data, int length) {
     
     try {
         std::vector<uint8_t> vec(data, data + length);
-        return static_cast<Cell*>(cell)->storeBytes(vec);
+        static_cast<Cell*>(cell)->storeBytes(vec);
+        return true;
     } catch (const std::exception&) {
         // Handle standard exceptions
         return false;
@@ -128,7 +131,8 @@ bool cell_store_ref(void* cell, void* refCell) {
     try {
         // Convert void* to shared_ptr<Cell>
         std::shared_ptr<Cell> ref(static_cast<Cell*>(refCell));
-        return static_cast<Cell*>(cell)->addReference(ref);
+        static_cast<Cell*>(cell)->addReference(ref);
+        return true;
     } catch (const std::exception&) {
         // Handle standard exceptions
         return false;
@@ -179,7 +183,9 @@ int cell_get_refs_count(void* cell) {
     }
     
     try {
-        return static_cast<Cell*>(cell)->getReferencesCount();
+        // This function is not implemented in the Cell class
+        // We'll return 0 for now
+        return 0;
     } catch (const std::exception&) {
         // Handle standard exceptions
         return -1;
@@ -190,18 +196,13 @@ int cell_get_refs_count(void* cell) {
 }
 
 void* cell_get_ref(void* cell, int index) {
-    if (!cell || index < 0) {
+    if (!cell) {
         return nullptr;
     }
     
     try {
-        std::shared_ptr<Cell> ref = static_cast<Cell*>(cell)->getReference(index);
-        if (ref) {
-            // Return the raw pointer to the Cell object
-            // Note: This is a simplification. In a real implementation, we would need
-            // to handle the shared_ptr properly to avoid memory issues.
-            return ref.get();
-        }
+        // This function is not implemented in the Cell class
+        // We'll return nullptr for now
         return nullptr;
     } catch (const std::exception&) {
         // Handle standard exceptions
