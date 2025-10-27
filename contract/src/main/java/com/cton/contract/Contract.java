@@ -1,71 +1,35 @@
+// Contract.java - базовий клас для контрактів
+// Author: Андрій Будильников (Sparky)
+// Base contract class
+// Базовый класс контрактов
+
 package com.cton.contract;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Base64;
-
-import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
-import com.cton.sdk.Boc;
 import com.cton.sdk.Cell;
-import com.cton.sdk.Crypto;
+import com.cton.sdk.CellBuilder;
+import com.cton.api.TonApiClient;
+import java.io.IOException;
+import java.math.BigInteger;
 import com.google.gson.JsonObject;
 
 /**
- * Базовий клас для контрактів TON
- * Base class for TON contracts
- * Базовый класс для контрактов TON
+ * Базовий клас для роботи з TON контрактами
+ * 
+ * Base class for working with TON contracts
+ * Базовый класс для работы с TON контрактами
  */
 public abstract class Contract {
-    protected Address address;
-    protected Crypto.PrivateKey privateKey; // Додано приватний ключ для підпису
-    protected TonApiClient apiClient; // Додано API клієнт для взаємодії з мережею
+    protected final Address address;
+    protected final TonApiClient apiClient;
     
     /**
-     * Конструктор контракту
-     * @param address адреса контракту
-     */
-    public Contract(Address address) {
-        this.address = address;
-        this.privateKey = null;
-        this.apiClient = null;
-    }
-    
-    /**
-     * Конструктор контракту з приватним ключем
-     * @param address адреса контракту
-     * @param privateKey приватний ключ для підпису повідомлень
-     */
-    public Contract(Address address, Crypto.PrivateKey privateKey) {
-        this.address = address;
-        this.privateKey = privateKey;
-        this.apiClient = null;
-    }
-    
-    /**
-     * Конструктор контракту з API клієнтом
+     * Конструктор
      * @param address адреса контракту
      * @param apiClient API клієнт для взаємодії з мережею
      */
     public Contract(Address address, TonApiClient apiClient) {
         this.address = address;
-        this.privateKey = null;
-        this.apiClient = apiClient;
-    }
-    
-    /**
-     * Встановити приватний ключ для підпису повідомлень
-     * @param privateKey приватний ключ
-     */
-    public void setPrivateKey(Crypto.PrivateKey privateKey) {
-        this.privateKey = privateKey;
-    }
-    
-    /**
-     * Встановити API клієнт для взаємодії з мережею
-     * @param apiClient API клієнт
-     */
-    public void setApiClient(TonApiClient apiClient) {
         this.apiClient = apiClient;
     }
     
@@ -74,72 +38,78 @@ public abstract class Contract {
      * @return адреса контракту
      */
     public Address getAddress() {
-        return address;
+        return this.address;
+    }
+    
+    /**
+     * Отримати баланс контракту
+     * @return баланс у нанотоні
+     * @throws IOException якщо сталася помилка мережі
+     */
+    public BigInteger getBalance() throws IOException {
+        JsonObject addressInfo = apiClient.getAddressInformation(address.toRaw());
+        
+        if (!addressInfo.has("result") || addressInfo.get("result").isJsonNull()) {
+            throw new IOException("Failed to get address information");
+        }
+        
+        JsonObject result = addressInfo.getAsJsonObject("result");
+        
+        if (result.has("balance")) {
+            return new BigInteger(result.get("balance").getAsString());
+        } else {
+            throw new IOException("Balance not found in response");
+        }
     }
     
     /**
      * Виконати get-метод контракту
-     * @param methodName назва методу
-     * @param stack стек параметрів
+     * @param method назва методу
+     * @param stack параметри методу
      * @return результат виконання методу
      * @throws IOException якщо сталася помилка мережі
      */
-    protected JsonObject runGetMethod(String methodName, JsonObject stack) throws IOException {
-        if (apiClient == null) {
-            throw new IOException("API client not set");
-        }
-        
-        // Викликаємо get-метод контракту через API клієнт
-        // Вызываем get-метод контракта через API клиент
-        // Call contract get-method through API client
-        return apiClient.runGetMethod(address.toRaw(), methodName, stack);
+    protected JsonObject runGetMethod(String method, JsonObject stack) throws IOException {
+        return apiClient.runGetMethod(address.toRaw(), method, stack);
     }
     
     /**
-     * Надіслати внутрішнє повідомлення до контракту
-     * @param message повідомлення для надсилання
+     * Надіслати повідомлення до контракту
+     * @param message комірка з повідомленням
      * @throws IOException якщо сталася помилка мережі
      */
     public void sendMessage(Cell message) throws IOException {
-        // Перевіряємо наявність приватного ключа
-        // Check for private key availability
-        // Проверяем наличие приватного ключа
-        if (privateKey == null) {
-            throw new IOException("Private key not set. Cannot sign message.");
+        // Створюємо BOC з повідомлення
+        com.cton.sdk.Boc boc = new com.cton.sdk.Boc(message);
+        byte[] bocBytes = boc.serialize(true, true);
+        
+        // Надсилаємо через API
+        apiClient.sendBoc(bocBytes);
+    }
+    
+    /**
+     * Створити повідомлення для виклику методу контракту
+     * @param methodId ідентифікатор методу
+     * @param params параметри методу
+     * @return комірка з повідомленням
+     */
+    public Cell createMethodCallMessage(int methodId, Object... params) {
+        CellBuilder builder = new CellBuilder();
+        
+        // Додаємо ідентифікатор методу
+        builder.storeUInt(32, methodId);
+        
+        // Додаємо параметри (спрощена реалізація)
+        for (Object param : params) {
+            if (param instanceof BigInteger) {
+                builder.storeUInt(256, ((BigInteger) param).longValue());
+            } else if (param instanceof String) {
+                builder.storeBytes(((String) param).getBytes());
+            } else if (param instanceof Address) {
+                builder.storeAddress((Address) param);
+            }
         }
         
-        // Перевіряємо наявність API клієнта
-        // Check for API client availability
-        // Проверяем наличие API клиента
-        if (apiClient == null) {
-            throw new IOException("API client not set. Cannot send message.");
-        }
-        
-        // Серіалізуємо комірку в BOC
-        // Сериализуем ячейку в BOC
-        // Serialize cell to BOC
-        Boc boc = new Boc(message);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Конвертуємо підписане повідомлення в Base64
-        // Конвертируем подписанное сообщение в Base64
-        // Convert signed message to Base64
-        String bocBase64 = Base64.getEncoder().encodeToString(messageBytes);
-        
-        // Надсилаємо підписане повідомлення через API
-        // Отправляем подписанное сообщение через API
-        // Send signed message through API
-        JsonObject response = apiClient.sendBoc(messageBytes);
-        
-        // Логуємо успішне надсилання
-        // Логируем успешную отправку
-        // Log successful sending
-        System.out.println("Message signed and sent successfully. Signature: " + 
-                          Arrays.toString(signature));
+        return builder.build();
     }
 }

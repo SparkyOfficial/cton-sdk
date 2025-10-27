@@ -72,4 +72,23 @@ public interface Wallet {
      * @throws IOException якщо сталася помилка мережі
      */
     int getVersion() throws IOException;
+    
+    /**
+     * Отримати ідентифікатор підкошелька
+     * @return ідентифікатор підкошелька
+     * @throws IOException якщо сталася помилка мережі
+     */
+    default int getSubwalletId() throws IOException {
+        return 698983191; // Default subwallet ID
+    }
+    
+    /**
+     * Створити багато транзакцій для високонавантажених кошельків
+     * @param transfers масив транзакцій
+     * @return комірка з багатьма транзакціями
+     * @throws IOException якщо сталася помилка
+     */
+    default Cell createBulkTransfer(com.cton.contract.BulkTransfer[] transfers) throws IOException {
+        throw new UnsupportedOperationException("Bulk transfer not supported by this wallet type");
+    }
 }
