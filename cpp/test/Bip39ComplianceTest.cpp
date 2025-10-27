@@ -1,7 +1,7 @@
-// MnemonicTest.cpp - тестування мнемонічних фраз
+// Bip39ComplianceTest.cpp - тестування BIP-39 сумісності
 // Author: Андрій Будильников (Sparky)
-// Mnemonic phrase testing
-// Тестирование мнемонических фраз
+// BIP-39 compliance testing
+// Тестирование совместимости BIP-39
 
 #include "../include/Mnemonic.h"
 #include "../include/Crypto.h"
@@ -12,7 +12,7 @@
 using namespace cton;
 
 int main() {
-    std::cout << "Testing mnemonic functionality..." << std::endl;
+    std::cout << "Testing BIP-39 compliance..." << std::endl;
     
     try {
         // Тест 1: Перевірка розміру wordlist
@@ -59,57 +59,57 @@ int main() {
         assert(valid18);
         std::cout << "   All mnemonics are valid" << std::endl;
         
-        // Тест 6: Отримання wordlist
-        // Test 6: Get wordlist
-        // Тест 6: Получение wordlist
-        std::cout << "6. Getting wordlist..." << std::endl;
-        const auto& wordlist2 = Mnemonic::getWordlist();
-        assert(!wordlist2.empty());
-        assert(wordlist2.size() == 2048);
-        std::cout << "   Wordlist size: " << wordlist2.size() << " words" << std::endl;
-        
-        // Тест 7: Конвертація мнемоніки в seed
-        // Test 7: Convert mnemonic to seed
-        // Тест 7: Конвертация мнемоники в сид
-        std::cout << "7. Converting mnemonic to seed..." << std::endl;
+        // Тест 6: Конвертація мнемоніки в seed
+        // Test 6: Convert mnemonic to seed
+        // Тест 6: Конвертация мнемоники в сид
+        std::cout << "6. Converting mnemonic to seed..." << std::endl;
         auto seed = Mnemonic::toSeed(mnemonic24);
         assert(seed.size() == 64); // BIP-39 seeds are 512 bits (64 bytes)
         std::cout << "   Seed generated: " << seed.size() << " bytes (expected: 64)" << std::endl;
         
-        // Тест 8: Інтеграція з Crypto
-        // Test 8: Integration with Crypto
-        // Тест 8: Интеграция с Crypto
-        std::cout << "8. Testing Crypto integration..." << std::endl;
-        auto cryptoMnemonic = Crypto::generateMnemonic();
-        assert(cryptoMnemonic.size() == 24);
-        std::cout << "   Crypto mnemonic generated: " << cryptoMnemonic.size() << " words" << std::endl;
-        
-        // Тест 9: Конвертація мнемоніки в приватний ключ
-        // Test 9: Convert mnemonic to private key
-        // Тест 9: Конвертация мнемоники в приватный ключ
-        std::cout << "9. Converting mnemonic to private key..." << std::endl;
-        auto privateKey = Crypto::mnemonicToPrivateKey(cryptoMnemonic);
+        // Тест 7: Конвертація мнемоніки в приватний ключ через Crypto
+        // Test 7: Convert mnemonic to private key via Crypto
+        // Тест 7: Конвертация мнемоники в приватный ключ через Crypto
+        std::cout << "7. Converting mnemonic to private key..." << std::endl;
+        auto privateKey = Crypto::mnemonicToPrivateKey(mnemonic24);
         auto keyData = privateKey.getData();
-        assert(keyData.size() == 32);
+        assert(keyData.size() == 32); // Ed25519 private keys are 32 bytes
         std::cout << "   Private key generated from mnemonic: " << keyData.size() << " bytes" << std::endl;
         
-        // Тест 10: Отримання публічного ключа
-        // Test 10: Get public key
-        // Тест 10: Получение публичного ключа
-        std::cout << "10. Deriving public key..." << std::endl;
+        // Тест 8: Отримання публічного ключа
+        // Test 8: Get public key
+        // Тест 8: Получение публичного ключа
+        std::cout << "8. Deriving public key..." << std::endl;
         auto publicKey = privateKey.getPublicKey();
         auto pubKeyData = publicKey.getData();
-        assert(pubKeyData.size() == 32);
+        assert(pubKeyData.size() == 32); // Ed25519 public keys are 32 bytes
         std::cout << "   Public key derived: " << pubKeyData.size() << " bytes" << std::endl;
         
-        std::cout << "\nMnemonic functionality test completed successfully!" << std::endl;
+        // Тест 9: Підпис повідомлення
+        // Test 9: Sign message
+        // Тест 9: Подпись сообщения
+        std::cout << "9. Signing message..." << std::endl;
+        std::vector<uint8_t> message = {0x01, 0x02, 0x03, 0x04};
+        auto signature = Crypto::sign(privateKey, message);
+        assert(signature.size() == 64); // Ed25519 signatures are 64 bytes
+        std::cout << "   Message signed: " << signature.size() << " bytes signature" << std::endl;
+        
+        // Тест 10: Перевірка підпису
+        // Test 10: Verify signature
+        // Тест 10: Проверка подписи
+        std::cout << "10. Verifying signature..." << std::endl;
+        bool verified = Crypto::verify(publicKey, message, signature);
+        assert(verified);
+        std::cout << "   Signature verified: " << (verified ? "valid" : "invalid") << std::endl;
+        
+        std::cout << "\nBIP-39 compliance test completed successfully!" << std::endl;
         return 0;
         
     } catch (const std::exception& e) {
-        std::cerr << "Error in mnemonic test: " << e.what() << std::endl;
+        std::cerr << "Error in BIP-39 test: " << e.what() << std::endl;
         return 1;
     } catch (...) {
-        std::cerr << "Unknown error in mnemonic test" << std::endl;
+        std::cerr << "Unknown error in BIP-39 test" << std::endl;
         return 1;
     }
 }

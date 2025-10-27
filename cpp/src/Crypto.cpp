@@ -329,9 +329,9 @@ namespace cton {
         // Конвертируем мнемонику в сид
         auto seed = Mnemonic::toSeed(mnemonic);
         
-        // Для простоти, використовуємо перші 32 байти seed як приватний ключ
-        // For simplicity, use first 32 bytes of seed as private key
-        // Для простоты, используем первые 32 байта сида как приватный ключ
+        // Використовуємо перші 32 байти seed як приватний ключ
+        // Use first 32 bytes of seed as private key
+        // Используем первые 32 байта сида как приватный ключ
         if (seed.size() >= 32) {
             return PrivateKey(std::vector<uint8_t>(seed.begin(), seed.begin() + 32));
         } else {

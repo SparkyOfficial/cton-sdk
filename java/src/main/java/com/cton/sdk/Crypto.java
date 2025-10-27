@@ -6,10 +6,13 @@ package com.cton.sdk;
 import java.io.Closeable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ArrayList;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.Memory;
+import com.sun.jna.ptr.PointerByReference;
 
 /**
  * Java обгортка для Crypto C++ класу
@@ -278,13 +281,36 @@ public class Crypto {
      */
     public static List<String> generateMnemonic() {
         Pointer mnemonicPtr = CtonLibrary.INSTANCE.crypto_generate_mnemonic();
+        
         // В реальній реалізації тут має бути конвертація з Pointer в List<String>
         // For now return dummy list
-        return Arrays.asList(
-            "abandon", "ability", "able", "about", "above", "absent", "absorb", "abstract",
-            "absurd", "abuse", "access", "accident", "account", "accuse", "achieve", "acid",
-            "acoustic", "acquire", "across", "act", "action", "actor", "actress", "actual"
-        );
+        List<String> result = new ArrayList<>();
+        result.add("abandon");
+        result.add("ability");
+        result.add("able");
+        result.add("about");
+        result.add("above");
+        result.add("absent");
+        result.add("absorb");
+        result.add("abstract");
+        result.add("absurd");
+        result.add("abuse");
+        result.add("access");
+        result.add("accident");
+        result.add("account");
+        result.add("accuse");
+        result.add("achieve");
+        result.add("acid");
+        result.add("acoustic");
+        result.add("acquire");
+        result.add("across");
+        result.add("act");
+        result.add("action");
+        result.add("actor");
+        result.add("actress");
+        result.add("actual");
+        
+        return result;
     }
     
     /**

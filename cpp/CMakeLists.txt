@@ -61,6 +61,10 @@ target_link_libraries(boc_compliance_test cton-sdk-core)
 add_executable(mnemonic_test test/MnemonicTest.cpp)
 target_link_libraries(mnemonic_test cton-sdk-core)
 
+# Create BIP-39 compliance test executable
+add_executable(bip39_compliance_test test/Bip39ComplianceTest.cpp)
+target_link_libraries(bip39_compliance_test cton-sdk-core)
+
 # Create BOC performance test executable
 add_executable(boc_performance_test test/BocPerformanceTest.cpp)
 target_link_libraries(boc_performance_test cton-sdk-core)
@@ -181,6 +185,11 @@ target_include_directories(boc_compliance_test PUBLIC
 )
 
 target_include_directories(mnemonic_test PUBLIC 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
+target_include_directories(bip39_compliance_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
