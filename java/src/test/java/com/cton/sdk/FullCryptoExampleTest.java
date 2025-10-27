@@ -5,17 +5,18 @@
 
 package com.cton.sdk;
 
-import com.cton.sdk.Crypto;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+
 import com.cton.sdk.Crypto.PrivateKey;
 import com.cton.sdk.Crypto.PublicKey;
 import com.cton.sdk.Crypto.Secp256k1PrivateKey;
 import com.cton.sdk.Crypto.Secp256k1PublicKey;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import java.util.Arrays;
-import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class FullCryptoExampleTest {
     

@@ -3,13 +3,14 @@
 // Example of using all cryptographic algorithms
 // Пример использования всех криптографических алгоритмов
 
+import java.util.Arrays;
+import java.util.List;
+
 import com.cton.sdk.Crypto;
 import com.cton.sdk.Crypto.PrivateKey;
 import com.cton.sdk.Crypto.PublicKey;
 import com.cton.sdk.Crypto.Secp256k1PrivateKey;
 import com.cton.sdk.Crypto.Secp256k1PublicKey;
-import java.util.Arrays;
-import java.util.List;
 
 public class FullCryptoExample {
     public static void main(String[] args) {
