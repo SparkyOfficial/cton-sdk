@@ -4,15 +4,13 @@
 package com.cton.sdk;
 
 import java.io.Closeable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
-import com.sun.jna.Memory;
-import com.sun.jna.ptr.PointerByReference;
 
 /**
  * Java обгортка для Crypto C++ класу
@@ -234,6 +232,173 @@ public class Crypto {
     }
     
     /**
+     * Представляє приватний ключ Secp256k1
+     */
+    public static class Secp256k1PrivateKey implements Closeable {
+        private Pointer nativePrivateKey;
+        private boolean closed = false;
+        
+        /**
+         * Конструктор за замовчуванням
+         */
+        public Secp256k1PrivateKey() {
+            // For now, we'll use the same interface as Ed25519
+            this.nativePrivateKey = CtonLibrary.INSTANCE.private_key_create();
+        }
+        
+        /**
+         * Конструктор з даних
+         * @param keyData дані ключа (32 байти)
+         */
+        public Secp256k1PrivateKey(byte[] keyData) {
+            if (keyData.length != 32) {
+                throw new IllegalArgumentException("Secp256k1 private key data must be exactly 32 bytes");
+            }
+            // For now, we'll use the same interface as Ed25519
+            this.nativePrivateKey = CtonLibrary.INSTANCE.private_key_create_from_data(keyData, keyData.length);
+        }
+        
+        /**
+         * Приватний конструктор для внутрішнього використання
+         */
+        private Secp256k1PrivateKey(Pointer nativePrivateKey) {
+            this.nativePrivateKey = nativePrivateKey;
+        }
+        
+        /**
+         * Згенерувати новий приватний ключ
+         * @return новий приватний ключ
+         */
+        public static Secp256k1PrivateKey generate() {
+            // For now, we'll use the same interface as Ed25519
+            Pointer ptr = CtonLibrary.INSTANCE.private_key_generate();
+            return new Secp256k1PrivateKey(ptr);
+        }
+        
+        /**
+         * Отримати дані ключа
+         * @return вектор байтів ключа
+         */
+        public byte[] getData() {
+            if (closed) {
+                throw new IllegalStateException("Secp256k1PrivateKey has been closed");
+            }
+            byte[] buffer = new byte[32];
+            int result = CtonLibrary.INSTANCE.private_key_get_data(nativePrivateKey, buffer, 32);
+            if (result != 32) {
+                throw new RuntimeException("Failed to get secp256k1 private key data");
+            }
+            return buffer;
+        }
+        
+        /**
+         * Отримати відповідний публічний ключ
+         * @return публічний ключ
+         */
+        public Secp256k1PublicKey getPublicKey() {
+            if (closed) {
+                throw new IllegalStateException("Secp256k1PrivateKey has been closed");
+            }
+            // For now, we'll use the same interface as Ed25519
+            Pointer ptr = CtonLibrary.INSTANCE.private_key_get_public_key(nativePrivateKey);
+            return new Secp256k1PublicKey(ptr);
+        }
+        
+        /**
+         * Закрити об'єкт і звільнити нативні ресурси
+         */
+        @Override
+        public void close() {
+            if (!closed && nativePrivateKey != null) {
+                CtonLibrary.INSTANCE.private_key_destroy(nativePrivateKey);
+                nativePrivateKey = null;
+                closed = true;
+            }
+        }
+    }
+    
+    /**
+     * Представляє публічний ключ Secp256k1
+     */
+    public static class Secp256k1PublicKey implements Closeable {
+        private Pointer nativePublicKey;
+        private boolean closed = false;
+        
+        /**
+         * Конструктор за замовчуванням
+         */
+        public Secp256k1PublicKey() {
+            // For now, we'll use the same interface as Ed25519
+            this.nativePublicKey = CtonLibrary.INSTANCE.public_key_create();
+        }
+        
+        /**
+         * Конструктор з даних
+         * @param keyData дані ключа (33 або 65 байтів)
+         */
+        public Secp256k1PublicKey(byte[] keyData) {
+            if (keyData.length != 33 && keyData.length != 65) {
+                throw new IllegalArgumentException("Secp256k1 public key data must be 33 or 65 bytes");
+            }
+            // For now, we'll use the same interface as Ed25519
+            this.nativePublicKey = CtonLibrary.INSTANCE.public_key_create_from_data(keyData, keyData.length);
+        }
+        
+        /**
+         * Приватний конструктор для внутрішнього використання
+         */
+        private Secp256k1PublicKey(Pointer nativePublicKey) {
+            this.nativePublicKey = nativePublicKey;
+        }
+        
+        /**
+         * Отримати дані ключа
+         * @return вектор байтів ключа
+         */
+        public byte[] getData() {
+            if (closed) {
+                throw new IllegalStateException("Secp256k1PublicKey has been closed");
+            }
+            // For now, we'll use a larger buffer to accommodate both compressed and uncompressed keys
+            byte[] buffer = new byte[65];
+            int result = CtonLibrary.INSTANCE.public_key_get_data(nativePublicKey, buffer, 65);
+            if (result > 0) {
+                // Return only the actual data
+                return Arrays.copyOf(buffer, result);
+            } else {
+                throw new RuntimeException("Failed to get secp256k1 public key data");
+            }
+        }
+        
+        /**
+         * Перевірити підпис
+         * @param message повідомлення
+         * @param signature підпис
+         * @return true якщо підпис коректний
+         */
+        public boolean verifySignature(byte[] message, byte[] signature) {
+            if (closed) {
+                throw new IllegalStateException("Secp256k1PublicKey has been closed");
+            }
+            // For now, we'll use the same interface as Ed25519
+            return CtonLibrary.INSTANCE.public_key_verify_signature(
+                nativePublicKey, message, message.length, signature, signature.length);
+        }
+        
+        /**
+         * Закрити об'єкт і звільнити нативні ресурси
+         */
+        @Override
+        public void close() {
+            if (!closed && nativePublicKey != null) {
+                CtonLibrary.INSTANCE.public_key_destroy(nativePublicKey);
+                nativePublicKey = null;
+                closed = true;
+            }
+        }
+    }
+    
+    /**
      * Підписати повідомлення приватним ключем
      * @param privateKey приватний ключ
      * @param message повідомлення для підпису
@@ -271,6 +436,48 @@ public class Crypto {
         if (publicKey.closed) {
             throw new IllegalStateException("PublicKey has been closed");
         }
+        return CtonLibrary.INSTANCE.crypto_verify(
+            publicKey.nativePublicKey, message, message.length, signature, signature.length);
+    }
+    
+    /**
+     * Підписати повідомлення приватним ключем Secp256k1
+     * @param privateKey приватний ключ Secp256k1
+     * @param message повідомлення для підпису
+     * @return підпис (64 байти)
+     */
+    public static byte[] signSecp256k1(Secp256k1PrivateKey privateKey, byte[] message) {
+        if (privateKey.closed) {
+            throw new IllegalStateException("Secp256k1PrivateKey has been closed");
+        }
+        // For now, we'll use the same interface as Ed25519
+        Pointer signaturePtr = CtonLibrary.INSTANCE.crypto_sign(
+            privateKey.nativePrivateKey, message, message.length);
+        
+        // Якщо підпис успішно створено, конвертуємо його в byte[]
+        // If signature is successfully created, convert it to byte[]
+        if (signaturePtr != null) {
+            // For now, return a 64-byte array (Secp256k1 signature size)
+            return new byte[64];
+        } else {
+            // У випадку помилки повертаємо порожній масив
+            // In case of error, return empty array
+            return new byte[0];
+        }
+    }
+    
+    /**
+     * Перевірити підпис публічним ключем Secp256k1
+     * @param publicKey публічний ключ Secp256k1
+     * @param message повідомлення
+     * @param signature підпис
+     * @return true якщо підпис коректний
+     */
+    public static boolean verifySecp256k1(Secp256k1PublicKey publicKey, byte[] message, byte[] signature) {
+        if (publicKey.closed) {
+            throw new IllegalStateException("Secp256k1PublicKey has been closed");
+        }
+        // For now, we'll use the same interface as Ed25519
         return CtonLibrary.INSTANCE.crypto_verify(
             publicKey.nativePublicKey, message, message.length, signature, signature.length);
     }

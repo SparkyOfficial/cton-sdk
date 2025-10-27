@@ -63,10 +63,29 @@ extern "C" {
     CTON_SDK_CORE_API bool public_key_verify_signature(void* publicKey, const uint8_t* message, int messageLen, 
                                     const uint8_t* signature, int signatureLen);
 
+    // Secp256k1 private key functions
+    CTON_SDK_CORE_API void* secp256k1_private_key_create();
+    CTON_SDK_CORE_API void* secp256k1_private_key_create_from_data(const uint8_t* keyData, int length);
+    CTON_SDK_CORE_API void secp256k1_private_key_destroy(void* privateKey);
+    CTON_SDK_CORE_API void* secp256k1_private_key_generate();
+    CTON_SDK_CORE_API int secp256k1_private_key_get_data(void* privateKey, uint8_t* buffer, int bufferSize);
+    CTON_SDK_CORE_API void* secp256k1_private_key_get_public_key(void* privateKey);
+
+    // Secp256k1 public key functions
+    CTON_SDK_CORE_API void* secp256k1_public_key_create();
+    CTON_SDK_CORE_API void* secp256k1_public_key_create_from_data(const uint8_t* keyData, int length);
+    CTON_SDK_CORE_API void secp256k1_public_key_destroy(void* publicKey);
+    CTON_SDK_CORE_API int secp256k1_public_key_get_data(void* publicKey, uint8_t* buffer, int bufferSize);
+    CTON_SDK_CORE_API bool secp256k1_public_key_verify_signature(void* publicKey, const uint8_t* message, int messageLen, 
+                                               const uint8_t* signature, int signatureLen);
+
     // Crypto functions
     CTON_SDK_CORE_API void* crypto_sign(void* privateKey, const uint8_t* message, int messageLen);
     CTON_SDK_CORE_API bool crypto_verify(void* publicKey, const uint8_t* message, int messageLen, 
                       const uint8_t* signature, int signatureLen);
+    CTON_SDK_CORE_API void* crypto_sign_secp256k1(void* privateKey, const uint8_t* message, int messageLen);
+    CTON_SDK_CORE_API bool crypto_verify_secp256k1(void* publicKey, const uint8_t* message, int messageLen, 
+                         const uint8_t* signature, int signatureLen);
     CTON_SDK_CORE_API char** crypto_generate_mnemonic();
     CTON_SDK_CORE_API void* crypto_mnemonic_to_private_key(char** mnemonic);
 

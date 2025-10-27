@@ -3,10 +3,11 @@
 // Example of using BIP-39 mnemonic phrases
 // Пример использования мнемонических фраз BIP-39
 
+import java.util.List;
+
 import com.cton.sdk.Crypto;
 import com.cton.sdk.Crypto.PrivateKey;
 import com.cton.sdk.Crypto.PublicKey;
-import java.util.List;
 
 public class MnemonicExample {
     public static void main(String[] args) {

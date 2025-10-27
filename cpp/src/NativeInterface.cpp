@@ -517,6 +517,174 @@ bool public_key_verify_signature(void* publicKey, const uint8_t* message, int me
     }
 }
 
+// Secp256k1 private key functions
+void* secp256k1_private_key_create() {
+    try {
+        return new Secp256k1PrivateKey();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return nullptr;
+    }
+}
+
+void* secp256k1_private_key_create_from_data(const uint8_t* keyData, int length) {
+    if (!keyData || length != 32) {
+        return nullptr;
+    }
+    
+    try {
+        std::vector<uint8_t> data(keyData, keyData + length);
+        return new Secp256k1PrivateKey(data);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return nullptr;
+    }
+}
+
+void secp256k1_private_key_destroy(void* privateKey) {
+    if (privateKey) {
+        try {
+            delete static_cast<Secp256k1PrivateKey*>(privateKey);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
+    }
+}
+
+void* secp256k1_private_key_generate() {
+    try {
+        Secp256k1PrivateKey key = Secp256k1PrivateKey::generate();
+        // Create a new Secp256k1PrivateKey object and return it
+        return new Secp256k1PrivateKey(key);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return nullptr;
+    }
+}
+
+int secp256k1_private_key_get_data(void* privateKey, uint8_t* buffer, int bufferSize) {
+    if (!privateKey || !buffer || bufferSize < 32) {
+        return -1;
+    }
+    
+    try {
+        auto data = static_cast<Secp256k1PrivateKey*>(privateKey)->getData();
+        std::memcpy(buffer, data.data(), 32);
+        return 32;
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return -1;
+    }
+}
+
+void* secp256k1_private_key_get_public_key(void* privateKey) {
+    if (!privateKey) {
+        return nullptr;
+    }
+    
+    try {
+        Secp256k1PublicKey publicKey = static_cast<Secp256k1PrivateKey*>(privateKey)->getPublicKey();
+        // Create a new Secp256k1PublicKey object and return it
+        return new Secp256k1PublicKey(publicKey);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return nullptr;
+    }
+}
+
+// Secp256k1 public key functions
+void* secp256k1_public_key_create() {
+    try {
+        return new Secp256k1PublicKey();
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return nullptr;
+    }
+}
+
+void* secp256k1_public_key_create_from_data(const uint8_t* keyData, int length) {
+    if (!keyData || (length != 33 && length != 65)) {
+        return nullptr;
+    }
+    
+    try {
+        std::vector<uint8_t> data(keyData, keyData + length);
+        return new Secp256k1PublicKey(data);
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return nullptr;
+    }
+}
+
+void secp256k1_public_key_destroy(void* publicKey) {
+    if (publicKey) {
+        try {
+            delete static_cast<Secp256k1PublicKey*>(publicKey);
+        } catch (...) {
+            // Ignore exceptions during destruction
+        }
+    }
+}
+
+int secp256k1_public_key_get_data(void* publicKey, uint8_t* buffer, int bufferSize) {
+    if (!publicKey || !buffer || bufferSize < 33) {
+        return -1;
+    }
+    
+    try {
+        auto data = static_cast<Secp256k1PublicKey*>(publicKey)->getData();
+        int copySize = std::min(bufferSize, (int)data.size());
+        std::memcpy(buffer, data.data(), copySize);
+        return copySize;
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return -1;
+    }
+}
+
+bool secp256k1_public_key_verify_signature(void* publicKey, const uint8_t* message, int messageLen, 
+                                          const uint8_t* signature, int signatureLen) {
+    if (!publicKey || !message || messageLen <= 0 || !signature || (signatureLen != 64 && signatureLen != 65)) {
+        return false;
+    }
+    
+    try {
+        std::vector<uint8_t> msg(message, message + messageLen);
+        std::vector<uint8_t> sig(signature, signature + signatureLen);
+        return static_cast<Secp256k1PublicKey*>(publicKey)->verifySignature(msg, sig);
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return false;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return false;
+    }
+}
+
 // Crypto functions
 void* crypto_sign(void* privateKey, const uint8_t* message, int messageLen) {
     if (!privateKey || !message || messageLen <= 0) {
@@ -551,6 +719,44 @@ bool crypto_verify(void* publicKey, const uint8_t* message, int messageLen,
         std::vector<uint8_t> msg(message, message + messageLen);
         std::vector<uint8_t> sig(signature, signature + signatureLen);
         return Crypto::verify(*static_cast<PublicKey*>(publicKey), msg, sig);
+    } catch (...) {
+        return false;
+    }
+}
+
+void* crypto_sign_secp256k1(void* privateKey, const uint8_t* message, int messageLen) {
+    if (!privateKey || !message || messageLen <= 0) {
+        return nullptr;
+    }
+    
+    try {
+        std::vector<uint8_t> msg(message, message + messageLen);
+        std::vector<uint8_t> signature = Crypto::signSecp256k1(*static_cast<Secp256k1PrivateKey*>(privateKey), msg);
+        
+        // Allocate memory for the signature and copy it
+        uint8_t* result = (uint8_t*)malloc(signature.size());
+        if (result) {
+            std::memcpy(result, signature.data(), signature.size());
+        }
+        return result;
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+bool crypto_verify_secp256k1(void* publicKey, const uint8_t* message, int messageLen, 
+                            const uint8_t* signature, int signatureLen) {
+    if (!publicKey || !message || messageLen <= 0 || !signature || (signatureLen != 64 && signatureLen != 65)) {
+        return false;
+    }
+    
+    try {
+        std::vector<uint8_t> msg(message, message + messageLen);
+        std::vector<uint8_t> sig(signature, signature + signatureLen);
+        return Crypto::verifySecp256k1(*static_cast<Secp256k1PublicKey*>(publicKey), msg, sig);
     } catch (...) {
         return false;
     }

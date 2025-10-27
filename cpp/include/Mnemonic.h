@@ -10,9 +10,20 @@
 #include <string>
 #include <cstdint>
 
+// Export definitions for Windows DLL
+#ifdef _WIN32
+    #ifdef CTON_SDK_CORE_EXPORTS
+        #define CTON_SDK_CORE_API __declspec(dllexport)
+    #else
+        #define CTON_SDK_CORE_API __declspec(dllimport)
+    #endif
+#else
+    #define CTON_SDK_CORE_API
+#endif
+
 namespace cton {
     
-    class Mnemonic {
+    class CTON_SDK_CORE_API Mnemonic {
     public:
         /**
          * Генерація мнемонічної фрази BIP-39

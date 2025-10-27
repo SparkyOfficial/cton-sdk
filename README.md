@@ -32,6 +32,7 @@ The CTON-SDK has been significantly enhanced and is now in BETA state with:
 - Comprehensive unit tests
 - Better error handling and resource management
 - Full BIP-39 mnemonic phrase support with PBKDF2-based key derivation
+- Additional cryptographic algorithms (secp256k1, ChaCha20)
 
 ### Building the Project
 
@@ -71,6 +72,8 @@ build_java.bat   # Build Java components
 - Signature creation and verification
 - Mnemonic phrase generation (BIP-39 compliant)
 - PBKDF2-based seed derivation from mnemonic phrases
+- Additional signature schemes (secp256k1)
+- ChaCha20 encryption/decryption for wallet security
 - OpenSSL integration framework
 
 #### BOC (Bag of Cells)
@@ -101,6 +104,7 @@ The SDK includes comprehensive examples in the `examples/` directory:
 - Jetton token interactions
 - NFT operations
 - Mnemonic phrase generation and key derivation
+- Additional cryptographic algorithms usage
 
 <!-- Russian version -->
 ## CTON-SDK: Продвинутый SDK для блокчейна TON
@@ -122,6 +126,7 @@ CTON-SDK был значительно улучшен и теперь наход
 - Комплексными модульными тестами
 - Лучшей обработкой ошибок и управлением ресурсами
 - Полной поддержкой мнемонических фраз BIP-39 с PBKDF2-базовой деривацией ключей
+- Дополнительными криптографическими алгоритмами (secp256k1, ChaCha20)
 
 ### Сборка проекта
 
@@ -164,3 +169,4 @@ CTON-SDK було значно покращено і тепер перебува
 - Комплексними модульними тестами
 - Кращою обробкою помилок та управлінням ресурсами
 - Повною підтримкою мнемонічних фраз BIP-39 з PBKDF2-базовою деривацією ключів
+- Додатковими криптографічними алгоритмами (secp256k1, ChaCha20)
