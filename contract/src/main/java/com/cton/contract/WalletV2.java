@@ -5,12 +5,13 @@
 
 package com.cton.contract;
 
+import java.io.IOException;
+import java.math.BigInteger;
+
+import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
 import com.cton.sdk.Cell;
 import com.cton.sdk.CellBuilder;
-import com.cton.api.TonApiClient;
-import java.math.BigInteger;
-import java.io.IOException;
 
 /**
  * Реалізація кошелька версії 2

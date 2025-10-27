@@ -5,14 +5,19 @@
 
 package com.cton.contract.example;
 
+import java.io.IOException;
+import java.math.BigInteger;
+
+import com.cton.api.TonApiClient;
+import com.cton.contract.BulkTransfer;
+import com.cton.contract.HighloadWallet;
+import com.cton.contract.Subscription;
+import com.cton.contract.WalletV1;
+import com.cton.contract.WalletV2;
+import com.cton.contract.WalletV3;
+import com.cton.contract.WalletV4;
 import com.cton.sdk.Address;
 import com.cton.sdk.Cell;
-import com.cton.sdk.Crypto;
-import com.cton.api.TonApiClient;
-import com.cton.contract.*;
-
-import java.math.BigInteger;
-import java.io.IOException;
 
 /**
  * Приклад використання розширених функцій контрактів

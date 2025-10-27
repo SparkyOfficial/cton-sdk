@@ -5,8 +5,9 @@
 
 package com.cton.contract;
 
-import com.cton.sdk.Address;
 import java.math.BigInteger;
+
+import com.cton.sdk.Address;
 
 /**
  * Представляє одну транзакцію в багатотранзакційному переказі

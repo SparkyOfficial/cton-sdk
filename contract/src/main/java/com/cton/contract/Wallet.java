@@ -5,10 +5,11 @@
 
 package com.cton.contract;
 
+import java.io.IOException;
+import java.math.BigInteger;
+
 import com.cton.sdk.Address;
 import com.cton.sdk.Cell;
-import java.math.BigInteger;
-import java.io.IOException;
 
 /**
  * Інтерфейс для роботи з TON кошельком

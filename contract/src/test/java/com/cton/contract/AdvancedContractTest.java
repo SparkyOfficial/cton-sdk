@@ -5,17 +5,16 @@
 
 package com.cton.contract;
 
-import com.cton.sdk.Address;
-import com.cton.sdk.Cell;
-import com.cton.api.TonApiClient;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.mockito.Mockito;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import java.math.BigInteger;
-import java.io.IOException;
+
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+
+import com.cton.api.TonApiClient;
+import com.cton.sdk.Address;
 
 public class AdvancedContractTest {
     
