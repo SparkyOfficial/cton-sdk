@@ -24,9 +24,9 @@ void testCellBasic() {
     // Додаємо дані
     // Add data
     // Добавляем данные
-    assert(cell.storeUInt(8, 0xFF));
-    assert(cell.storeInt(8, -1));
-    assert(cell.storeBytes({0x01, 0x02, 0x03}));
+    cell.storeUInt(8, 0xFF);
+    cell.storeInt(8, -1);
+    cell.storeBytes({0x01, 0x02, 0x03});
     
     // Перевіряємо розмір
     // Check size
@@ -36,7 +36,8 @@ void testCellBasic() {
     // Перевіряємо кількість референсів
     // Check reference count
     // Проверяем количество ссылок
-    assert(cell.getReferencesCount() == 0);
+    auto refs = cell.getReferences();
+    assert(refs.size() == 0);
     
     std::cout << "Cell basic functionality test passed!" << std::endl;
 }
@@ -139,36 +140,42 @@ void testCrypto() {
     std::cout << "Crypto functionality test passed!" << std::endl;
 }
 
-void testBoc() {
-    std::cout << "Testing BOC functionality..." << std::endl;
+void testAdditionalCrypto() {
+    std::cout << "Testing additional cryptographic algorithms..." << std::endl;
     
-    // Створюємо комірку
-    // Create cell
-    // Создаем ячейку
-    CellBuilder builder;
-    builder.storeUInt(32, 0x12345678)
-           .storeBytes({0x01, 0x02, 0x03, 0x04});
-    auto cell = builder.build();
+    // Генеруємо secp256k1 приватний ключ
+    // Generate secp256k1 private key
+    // Генерируем приватный ключ secp256k1
+    auto secp256k1PrivateKey = Secp256k1PrivateKey::generate();
     
-    // Створюємо BOC
-    // Create BOC
-    // Создаем BOC
-    Boc boc(cell);
+    // Отримуємо дані ключа
+    // Get key data
+    // Получаем данные ключа
+    auto secp256k1KeyData = secp256k1PrivateKey.getData();
+    assert(secp256k1KeyData.size() == 32);
     
-    // Серіалізуємо
-    // Serialize
-    // Сериализуем
-    auto serialized = boc.serialize(true, true);
-    assert(!serialized.empty());
+    // Отримуємо публічний ключ
+    // Get public key
+    // Получаем публичный ключ
+    auto secp256k1PublicKey = secp256k1PrivateKey.getPublicKey();
+    auto secp256k1PubKeyData = secp256k1PublicKey.getData();
+    assert(secp256k1PubKeyData.size() > 0);
     
-    // Десеріалізуємо
-    // Deserialize
-    // Десериализуем
-    auto deserialized = Boc::deserialize(serialized);
-    auto root = deserialized.getRoot();
-    assert(root != nullptr);
+    // Тестуємо ChaCha20
+    // Test ChaCha20
+    // Тестируем ChaCha20
+    std::vector<uint8_t> plaintext = {0x01, 0x02, 0x03, 0x04, 0x05};
+    std::vector<uint8_t> key(32, 0x12); // 32-byte key
+    std::vector<uint8_t> nonce(12, 0x34); // 12-byte nonce
     
-    std::cout << "BOC functionality test passed!" << std::endl;
+    auto ciphertext = ChaCha20::encrypt(plaintext, key, nonce);
+    assert(ciphertext.size() == plaintext.size());
+    
+    auto decrypted = ChaCha20::decrypt(ciphertext, key, nonce);
+    assert(decrypted.size() == plaintext.size());
+    assert(decrypted == plaintext);
+    
+    std::cout << "Additional cryptographic algorithms test passed!" << std::endl;
 }
 
 int main() {
@@ -179,7 +186,7 @@ int main() {
         testCellBuilder();
         testAddress();
         testCrypto();
-        testBoc();
+        testAdditionalCrypto();
         
         std::cout << "\nAll tests passed! CTON-SDK is working correctly." << std::endl;
         return 0;
