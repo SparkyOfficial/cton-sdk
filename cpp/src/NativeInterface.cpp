@@ -936,14 +936,22 @@ void* boc_get_root(void* boc) {
     
     try {
         std::shared_ptr<Cell> root = static_cast<Boc*>(boc)->getRoot();
-        // Return the raw pointer to the Cell object
-        // Note: This is a simplification. In a real implementation, we would need
-        // to handle the shared_ptr properly to avoid memory issues.
+        // Create a new Cell object that's a copy of the root cell
+        // This ensures proper memory management
         if (root) {
-            return root.get();
+            std::vector<uint8_t> data = root->getData();
+            size_t bitSize = root->getBitSize();
+            
+            // Create a new cell with the same data
+            Cell* newCell = new Cell(data, bitSize, std::vector<std::shared_ptr<Cell>>(), root->isSpecial());
+            return newCell;
         }
         return nullptr;
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
     } catch (...) {
+        // Handle any other unexpected exceptions
         return nullptr;
     }
 }

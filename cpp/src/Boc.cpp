@@ -555,9 +555,91 @@ namespace cton {
         // This can be done in a separate pass after creating all cells
         // Это можно сделать в отдельном проходе после создания всех ячеек
         
-        // Для простоти, створюємо одну порожню комірку як корінь
-        // For simplicity, create one empty cell as root
-        std::shared_ptr<Cell> root = std::make_shared<Cell>();
+        // Спочатку створюємо вектор для зберігання референсів кожної комірки
+        // First create a vector to store references for each cell
+        // Сначала создаем вектор для хранения ссылок каждой ячейки
+        std::vector<std::vector<size_t>> cellReferences(cellCount);
+        
+        // Повертаємося до початку для читання референсів
+        // Go back to the beginning to read references
+        // Возвращаемся к началу для чтения ссылок
+        size_t tempOffset = offset_;
+        offset_ = dataStartOffset;
+        
+        // Читаємо референси для кожної комірки
+        // Read references for each cell
+        // Читаем ссылки для каждой ячейки
+        for (size_t i = 0; i < cellCount; ++i) {
+            // Якщо є індекси, встановлюємо правильне положення
+            // If there are indices, set correct position
+            // Если есть индексы, устанавливаем правильную позицию
+            if (hasIdx && i < offsets.size()) {
+                offset_ = dataStartOffset + offsets[i];
+            }
+            
+            // Пропускаємо дескриптор і дані
+            // Skip descriptor and data
+            // Пропускаем дескриптор и данные
+            uint8_t descriptor = readByte();
+            bool hasBits = (descriptor & 0x80) != 0;
+            size_t refCount = (descriptor >> 3) & 0x07;
+            
+            // Пропускаємо біти даних
+            // Skip data bits
+            // Пропускаем биты данных
+            if (hasBits) {
+                size_t bitSize = readByte();
+                if (bitSize == 0) {
+                    bitSize = 256;
+                }
+                size_t dataSizeInBytes = (bitSize + 7) / 8;
+                offset_ += dataSizeInBytes;
+            }
+            
+            // Читаємо індекси референсів
+            // Read reference indices
+            // Читаем индексы ссылок
+            for (size_t j = 0; j < refCount; ++j) {
+                size_t refIndex = 0;
+                uint8_t byte2;
+                do {
+                    byte2 = readByte();
+                    refIndex = (refIndex << 7) | (byte2 & 0x7F);
+                } while ((byte2 & 0x80) != 0);
+                cellReferences[i].push_back(refIndex);
+            }
+        }
+        
+        // Встановлюємо референси для кожної комірки
+        // Set references for each cell
+        // Устанавливаем ссылки для каждой ячейки
+        for (size_t i = 0; i < cellCount; ++i) {
+            for (size_t refIndex : cellReferences[i]) {
+                if (refIndex < cells.size() && cells[refIndex]) {
+                    // Створюємо нову комірку з референсом
+                    // Create new cell with reference
+                    // Создаем новую ячейку с ссылкой
+                    std::vector<std::shared_ptr<Cell>> refs = {cells[refIndex]};
+                    // We can't modify the existing cell directly, so we create a new one
+                    // Ми не можемо змінити існуючу комірку напряму, тому створюємо нову
+                    cells[i] = std::make_shared<Cell>(cells[i]->getData(), cells[i]->getBitSize(), refs, cells[i]->isSpecial());
+                }
+            }
+        }
+        
+        // Встановлюємо кореневу комірку
+        // Set the root cell
+        // Устанавливаем корневую ячейку
+        std::shared_ptr<Cell> root;
+        if (!rootIndices.empty() && rootIndices[0] < cells.size()) {
+            root = cells[rootIndices[0]];
+        } else if (!cells.empty()) {
+            root = cells[0];
+        } else {
+            // Для простоти, створюємо одну порожню комірку як корінь
+            // For simplicity, create one empty cell as root
+            root = std::make_shared<Cell>();
+        }
         return Boc(root);
     }
     
