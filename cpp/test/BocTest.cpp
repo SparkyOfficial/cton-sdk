@@ -173,10 +173,26 @@ TEST(BocRoundTrip) {
         Boc deserializedBoc = Boc::deserialize(serializedData);
         auto deserializedRoot = deserializedBoc.getRoot();
         ASSERT_TRUE(deserializedRoot != nullptr);
-        // Note: Full verification would require comparing cell contents
-    } catch (...) {
-        // For now, just make sure it doesn't crash
-        ASSERT_TRUE(true);
+        
+        // Verify that the deserialized root has the same data
+        ASSERT_EQUAL(originalCell->getBitSize(), deserializedRoot->getBitSize());
+        
+        // Compare data
+        auto originalData = originalCell->getData();
+        auto deserializedData = deserializedRoot->getData();
+        ASSERT_EQUAL(originalData.size(), deserializedData.size());
+        
+        bool dataEqual = true;
+        for (size_t i = 0; i < originalData.size(); ++i) {
+            if (originalData[i] != deserializedData[i]) {
+                dataEqual = false;
+                break;
+            }
+        }
+        ASSERT_TRUE(dataEqual);
+    } catch (const std::exception& e) {
+        std::cerr << "Deserialization failed: " << e.what() << std::endl;
+        ASSERT_TRUE(false);
     }
 }
 

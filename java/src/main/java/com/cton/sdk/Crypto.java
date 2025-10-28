@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.sun.jna.Library;
+import com.sun.jna.Memory;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
 
@@ -39,7 +40,15 @@ public class Crypto {
         
         // Отримання публічного ключа з приватного
         Pointer private_key_get_public_key(Pointer privateKey);
-        
+
+        // Secp256k1 private key functions
+        Pointer secp256k1_private_key_create();
+        Pointer secp256k1_private_key_create_from_data(byte[] keyData, int length);
+        void secp256k1_private_key_destroy(Pointer privateKey);
+        Pointer secp256k1_private_key_generate();
+        int secp256k1_private_key_get_data(Pointer privateKey, byte[] buffer, int bufferSize);
+        Pointer secp256k1_private_key_get_public_key(Pointer privateKey);
+
         // Створення нового публічного ключа
         Pointer public_key_create();
         
@@ -54,12 +63,25 @@ public class Crypto {
         
         // Перевірка підпису
         boolean public_key_verify_signature(Pointer publicKey, byte[] message, int messageLen, byte[] signature, int signatureLen);
+
+        // Secp256k1 public key functions
+        Pointer secp256k1_public_key_create();
+        Pointer secp256k1_public_key_create_from_data(byte[] keyData, int length);
+        void secp256k1_public_key_destroy(Pointer publicKey);
+        int secp256k1_public_key_get_data(Pointer publicKey, byte[] buffer, int bufferSize);
+        boolean secp256k1_public_key_verify_signature(Pointer publicKey, byte[] message, int messageLen, byte[] signature, int signatureLen);
         
         // Створення підпису
         Pointer crypto_sign(Pointer privateKey, byte[] message, int messageLen);
         
         // Перевірка підпису
         boolean crypto_verify(Pointer publicKey, byte[] message, int messageLen, byte[] signature, int signatureLen);
+
+        // Створення підпису для ключа Secp256k1
+        Pointer crypto_sign_secp256k1(Pointer privateKey, byte[] message, int messageLen);
+        
+        // Перевірка підпису для ключа Secp256k1
+        boolean crypto_verify_secp256k1(Pointer publicKey, byte[] message, int messageLen, byte[] signature, int signatureLen);
         
         // Генерація мнемонічної фрази
         Pointer crypto_generate_mnemonic();
@@ -242,8 +264,7 @@ public class Crypto {
          * Конструктор за замовчуванням
          */
         public Secp256k1PrivateKey() {
-            // For now, we'll use the same interface as Ed25519
-            this.nativePrivateKey = CtonLibrary.INSTANCE.private_key_create();
+            this.nativePrivateKey = CtonLibrary.INSTANCE.secp256k1_private_key_create();
         }
         
         /**
@@ -254,8 +275,7 @@ public class Crypto {
             if (keyData.length != 32) {
                 throw new IllegalArgumentException("Secp256k1 private key data must be exactly 32 bytes");
             }
-            // For now, we'll use the same interface as Ed25519
-            this.nativePrivateKey = CtonLibrary.INSTANCE.private_key_create_from_data(keyData, keyData.length);
+            this.nativePrivateKey = CtonLibrary.INSTANCE.secp256k1_private_key_create_from_data(keyData, keyData.length);
         }
         
         /**
@@ -270,8 +290,7 @@ public class Crypto {
          * @return новий приватний ключ
          */
         public static Secp256k1PrivateKey generate() {
-            // For now, we'll use the same interface as Ed25519
-            Pointer ptr = CtonLibrary.INSTANCE.private_key_generate();
+            Pointer ptr = CtonLibrary.INSTANCE.secp256k1_private_key_generate();
             return new Secp256k1PrivateKey(ptr);
         }
         
@@ -284,7 +303,7 @@ public class Crypto {
                 throw new IllegalStateException("Secp256k1PrivateKey has been closed");
             }
             byte[] buffer = new byte[32];
-            int result = CtonLibrary.INSTANCE.private_key_get_data(nativePrivateKey, buffer, 32);
+            int result = CtonLibrary.INSTANCE.secp256k1_private_key_get_data(nativePrivateKey, buffer, 32);
             if (result != 32) {
                 throw new RuntimeException("Failed to get secp256k1 private key data");
             }
@@ -299,8 +318,7 @@ public class Crypto {
             if (closed) {
                 throw new IllegalStateException("Secp256k1PrivateKey has been closed");
             }
-            // For now, we'll use the same interface as Ed25519
-            Pointer ptr = CtonLibrary.INSTANCE.private_key_get_public_key(nativePrivateKey);
+            Pointer ptr = CtonLibrary.INSTANCE.secp256k1_private_key_get_public_key(nativePrivateKey);
             return new Secp256k1PublicKey(ptr);
         }
         
@@ -310,7 +328,7 @@ public class Crypto {
         @Override
         public void close() {
             if (!closed && nativePrivateKey != null) {
-                CtonLibrary.INSTANCE.private_key_destroy(nativePrivateKey);
+                CtonLibrary.INSTANCE.secp256k1_private_key_destroy(nativePrivateKey);
                 nativePrivateKey = null;
                 closed = true;
             }
@@ -328,8 +346,7 @@ public class Crypto {
          * Конструктор за замовчуванням
          */
         public Secp256k1PublicKey() {
-            // For now, we'll use the same interface as Ed25519
-            this.nativePublicKey = CtonLibrary.INSTANCE.public_key_create();
+            this.nativePublicKey = CtonLibrary.INSTANCE.secp256k1_public_key_create();
         }
         
         /**
@@ -340,8 +357,7 @@ public class Crypto {
             if (keyData.length != 33 && keyData.length != 65) {
                 throw new IllegalArgumentException("Secp256k1 public key data must be 33 or 65 bytes");
             }
-            // For now, we'll use the same interface as Ed25519
-            this.nativePublicKey = CtonLibrary.INSTANCE.public_key_create_from_data(keyData, keyData.length);
+            this.nativePublicKey = CtonLibrary.INSTANCE.secp256k1_public_key_create_from_data(keyData, keyData.length);
         }
         
         /**
@@ -361,7 +377,7 @@ public class Crypto {
             }
             // For now, we'll use a larger buffer to accommodate both compressed and uncompressed keys
             byte[] buffer = new byte[65];
-            int result = CtonLibrary.INSTANCE.public_key_get_data(nativePublicKey, buffer, 65);
+            int result = CtonLibrary.INSTANCE.secp256k1_public_key_get_data(nativePublicKey, buffer, 65);
             if (result > 0) {
                 // Return only the actual data
                 return Arrays.copyOf(buffer, result);
@@ -380,8 +396,7 @@ public class Crypto {
             if (closed) {
                 throw new IllegalStateException("Secp256k1PublicKey has been closed");
             }
-            // For now, we'll use the same interface as Ed25519
-            return CtonLibrary.INSTANCE.public_key_verify_signature(
+            return CtonLibrary.INSTANCE.secp256k1_public_key_verify_signature(
                 nativePublicKey, message, message.length, signature, signature.length);
         }
         
@@ -391,7 +406,7 @@ public class Crypto {
         @Override
         public void close() {
             if (!closed && nativePublicKey != null) {
-                CtonLibrary.INSTANCE.public_key_destroy(nativePublicKey);
+                CtonLibrary.INSTANCE.secp256k1_public_key_destroy(nativePublicKey);
                 nativePublicKey = null;
                 closed = true;
             }
@@ -414,10 +429,11 @@ public class Crypto {
         // Якщо підпис успішно створено, конвертуємо його в byte[]
         // If signature is successfully created, convert it to byte[]
         if (signaturePtr != null) {
-            // For now, return a 64-byte array (Ed25519 signature size)
-            // У реальній реалізації тут має бути конвертація з Pointer в byte[]
-            // In a real implementation, there should be conversion from Pointer to byte[]
-            return new byte[64];
+            // Convert Pointer to byte[]
+            byte[] signature = signaturePtr.getByteArray(0, 64);
+            // Free memory allocated in C++
+            Native.free(Pointer.nativeValue(signaturePtr));
+            return signature;
         } else {
             // У випадку помилки повертаємо порожній масив
             // In case of error, return empty array
@@ -450,15 +466,17 @@ public class Crypto {
         if (privateKey.closed) {
             throw new IllegalStateException("Secp256k1PrivateKey has been closed");
         }
-        // For now, we'll use the same interface as Ed25519
-        Pointer signaturePtr = CtonLibrary.INSTANCE.crypto_sign(
+        Pointer signaturePtr = CtonLibrary.INSTANCE.crypto_sign_secp256k1(
             privateKey.nativePrivateKey, message, message.length);
         
         // Якщо підпис успішно створено, конвертуємо його в byte[]
         // If signature is successfully created, convert it to byte[]
         if (signaturePtr != null) {
-            // For now, return a 64-byte array (Secp256k1 signature size)
-            return new byte[64];
+            // Convert Pointer to byte[]
+            byte[] signature = signaturePtr.getByteArray(0, 64);
+            // Free memory allocated in C++
+            Native.free(Pointer.nativeValue(signaturePtr));
+            return signature;
         } else {
             // У випадку помилки повертаємо порожній масив
             // In case of error, return empty array
@@ -477,8 +495,7 @@ public class Crypto {
         if (publicKey.closed) {
             throw new IllegalStateException("Secp256k1PublicKey has been closed");
         }
-        // For now, we'll use the same interface as Ed25519
-        return CtonLibrary.INSTANCE.crypto_verify(
+        return CtonLibrary.INSTANCE.crypto_verify_secp256k1(
             publicKey.nativePublicKey, message, message.length, signature, signature.length);
     }
     
@@ -489,33 +506,22 @@ public class Crypto {
     public static List<String> generateMnemonic() {
         Pointer mnemonicPtr = CtonLibrary.INSTANCE.crypto_generate_mnemonic();
         
-        // В реальній реалізації тут має бути конвертація з Pointer в List<String>
-        // For now return dummy list
+        // Convert Pointer to List<String>
+        if (mnemonicPtr == null) {
+            return new ArrayList<>();
+        }
+        
         List<String> result = new ArrayList<>();
-        result.add("abandon");
-        result.add("ability");
-        result.add("able");
-        result.add("about");
-        result.add("above");
-        result.add("absent");
-        result.add("absorb");
-        result.add("abstract");
-        result.add("absurd");
-        result.add("abuse");
-        result.add("access");
-        result.add("accident");
-        result.add("account");
-        result.add("accuse");
-        result.add("achieve");
-        result.add("acid");
-        result.add("acoustic");
-        result.add("acquire");
-        result.add("across");
-        result.add("act");
-        result.add("action");
-        result.add("actor");
-        result.add("actress");
-        result.add("actual");
+        int index = 0;
+        Pointer stringPtr;
+        while ((stringPtr = mnemonicPtr.getPointer(index * Native.POINTER_SIZE)) != null) {
+            String word = stringPtr.getString(0);
+            result.add(word);
+            index++;
+        }
+        
+        // Free the array itself
+        CtonLibrary.INSTANCE.free_string_array(mnemonicPtr);
         
         return result;
     }
@@ -526,8 +532,34 @@ public class Crypto {
      * @return приватний ключ
      */
     public static PrivateKey mnemonicToPrivateKey(List<String> mnemonic) {
-        // В реальній реалізації тут має бути конвертація List<String> в Pointer
-        // For now return generated key
-        return PrivateKey.generate();
+        // Convert List<String> to array of C strings
+        if (mnemonic == null || mnemonic.isEmpty()) {
+            throw new IllegalArgumentException("Mnemonic cannot be null or empty");
+        }
+        
+        // Create array of strings
+        String[] mnemonicArray = mnemonic.toArray(new String[0]);
+        
+        // Create array of pointers to strings
+        Pointer[] pointers = new Pointer[mnemonicArray.length + 1]; // +1 for null terminator
+        for (int i = 0; i < mnemonicArray.length; i++) {
+            pointers[i] = new Memory(mnemonicArray[i].length() + 1);
+            pointers[i].setString(0, mnemonicArray[i]);
+        }
+        pointers[mnemonicArray.length] = null; // Null terminator
+        
+        // Create pointer to array of pointers
+        Memory pointerArray = new Memory(pointers.length * Native.POINTER_SIZE);
+        for (int i = 0; i < pointers.length; i++) {
+            pointerArray.setPointer(i * Native.POINTER_SIZE, pointers[i]);
+        }
+        
+        Pointer privateKeyPtr = CtonLibrary.INSTANCE.crypto_mnemonic_to_private_key(pointerArray);
+        
+        if (privateKeyPtr == null) {
+            throw new RuntimeException("Failed to generate private key from mnemonic");
+        }
+        
+        return new PrivateKey(privateKeyPtr);
     }
 }

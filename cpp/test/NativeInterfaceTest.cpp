@@ -142,7 +142,8 @@ TEST(NativeCryptoSign) {
     
     private_key_destroy(privateKey);
     if (signature) {
-        // In a real implementation, we'd need to free the signature
+        // Free the signature memory
+        free(signature);
     }
 }
 

@@ -93,6 +93,10 @@ namespace cton {
         return weakRefs;
     }
     
+    size_t Cell::getRefsCount() const {
+        return references_.size();
+    }
+    
     bool Cell::isSpecial() const {
         return isSpecial_;
     }

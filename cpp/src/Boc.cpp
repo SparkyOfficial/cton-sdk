@@ -636,8 +636,7 @@ namespace cton {
         } else if (!cells.empty()) {
             root = cells[0];
         } else {
-            // Для простоти, створюємо одну порожню комірку як корінь
-            // For simplicity, create one empty cell as root
+            // Create one empty cell as root
             root = std::make_shared<Cell>();
         }
         return Boc(root);

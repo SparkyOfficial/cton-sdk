@@ -100,6 +100,12 @@ namespace cton {
         std::vector<std::weak_ptr<Cell>> getReferences() const;
         
         /**
+         * @brief Отримати кількість посилань
+         * @return кількість посилань
+         */
+        size_t getRefsCount() const;
+        
+        /**
          * @brief Перевірити чи є комірка спеціальною
          * @return true якщо спеціальна
          */

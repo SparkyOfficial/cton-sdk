@@ -106,8 +106,8 @@ TEST(CryptoSignAndVerify) {
     // Verify that signature is invalid for a different message
     std::vector<uint8_t> differentMessage = {0x05, 0x04, 0x03, 0x02, 0x01};
     bool isInvalid = Crypto::verify(publicKey, differentMessage, signature);
-    // Note: This might still return true with placeholder implementation
     // With real implementation, this should be false
+    ASSERT_FALSE(isInvalid);
 }
 
 TEST(CryptoSignAndVerifyWithTamperedSignature) {
@@ -130,9 +130,8 @@ TEST(CryptoSignAndVerifyWithTamperedSignature) {
     
     // Verify the tampered signature (should be invalid)
     bool isValid = Crypto::verify(publicKey, message, signature);
-    // Note: This might still return true with placeholder implementation
     // With real implementation, this should be false
-    ASSERT_TRUE(true); // For now, just make sure it doesn't crash
+    ASSERT_FALSE(isValid);
 }
 
 TEST(CryptoGenerateMnemonic) {
@@ -143,15 +142,10 @@ TEST(CryptoGenerateMnemonic) {
 
 TEST(CryptoMnemonicToPrivateKey) {
     auto mnemonic = Crypto::generateMnemonic();
-    // Test that it doesn't crash
-    try {
-        PrivateKey key = Crypto::mnemonicToPrivateKey(mnemonic);
-        auto data = key.getData();
-        ASSERT_EQUAL(32, data.size());
-    } catch (...) {
-        // Might not be fully implemented yet
-        ASSERT_TRUE(true);
-    }
+    // Test that it works correctly
+    PrivateKey key = Crypto::mnemonicToPrivateKey(mnemonic);
+    auto data = key.getData();
+    ASSERT_EQUAL(32, data.size());
 }
 
 // New test for key pair consistency
@@ -166,8 +160,21 @@ TEST(CryptoKeyPairConsistency) {
     ASSERT_EQUAL(32, privateKey.getData().size());
     ASSERT_EQUAL(32, publicKey.getData().size());
     
-    // Note: With real Ed25519 implementation, there would be a mathematical
-    // relationship between the private and public keys that we could verify
+    // Test signing and verification with real implementation
+    std::vector<uint8_t> message = {0x01, 0x02, 0x03, 0x04, 0x05};
+    std::vector<uint8_t> signature = Crypto::sign(privateKey, message);
+    
+    // Check signature size (should be 64 bytes for Ed25519)
+    ASSERT_EQUAL(64, signature.size());
+    
+    // Verify the signature
+    bool isValid = Crypto::verify(publicKey, message, signature);
+    ASSERT_TRUE(isValid);
+    
+    // Verify that signature is invalid for a different message
+    std::vector<uint8_t> differentMessage = {0x05, 0x04, 0x03, 0x02, 0x01};
+    bool isInvalid = Crypto::verify(publicKey, differentMessage, signature);
+    ASSERT_FALSE(isInvalid);
 }
 
 int main() {

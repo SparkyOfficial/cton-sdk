@@ -88,16 +88,17 @@ TEST(AddressToUserFriendly) {
 
 TEST(AddressFromUserFriendly) {
     // Test with a known valid user-friendly address
-    // Note: This is a placeholder test - in real implementation we would use actual valid addresses
-    Address addr("0:1234567890123456789012345678901234567890123456789012345678901234");
+    std::vector<uint8_t> hashPart(32, 0x12);
+    Address addr(0, hashPart);
     
     // Convert to user-friendly and back
     std::string userFriendly = addr.toUserFriendly(true, false);
     if (!userFriendly.empty()) {
         Address addr2 = Address::fromUserFriendly(userFriendly);
-        // With proper implementation, addr2 should be equal to addr
-        // For now, just check it doesn't crash
-        ASSERT_TRUE(true);
+        // Check that the addresses are equal
+        ASSERT_TRUE(addr2.isValid());
+        ASSERT_EQUAL(addr.getWorkchain(), addr2.getWorkchain());
+        ASSERT_TRUE(addr.getHashPart() == addr2.getHashPart());
     }
 }
 
@@ -113,21 +114,24 @@ TEST(AddressCRC16) {
     std::string uf2 = addr2.toUserFriendly(true, false);
     
     // Different addresses should produce different user-friendly representations
-    // Note: This might not always be true with placeholder implementation
-    ASSERT_TRUE(true); // For now, just make sure it doesn't crash
+    ASSERT_TRUE(!uf1.empty());
+    ASSERT_TRUE(!uf2.empty());
+    ASSERT_TRUE(uf1 != uf2);
 }
 
 TEST(AddressBase64Url) {
     // Test base64url encoding/decoding
-    std::vector<uint8_t> testData = {0x01, 0x02, 0x03, 0x04, 0x05};
-    
-    // With proper implementation, we would test the encoding/decoding functions directly
-    // For now, just test that address creation and conversion works
     std::vector<uint8_t> hashPart(32, 0xFF);
     Address addr(0, hashPart);
     
     std::string userFriendly = addr.toUserFriendly();
     ASSERT_TRUE(!userFriendly.empty());
+    
+    // Test round-trip conversion
+    Address addr2 = Address::fromUserFriendly(userFriendly);
+    ASSERT_TRUE(addr2.isValid());
+    ASSERT_EQUAL(addr.getWorkchain(), addr2.getWorkchain());
+    ASSERT_TRUE(addr.getHashPart() == addr2.getHashPart());
 }
 
 int main() {
