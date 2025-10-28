@@ -8,6 +8,7 @@ package com.cton.sdk;
 import java.util.Arrays;
 import java.util.List;
 
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.DisplayName;
@@ -106,8 +107,14 @@ public class FullCryptoExampleTest {
         byte[] nonce = new byte[12];
         Arrays.fill(nonce, (byte) 0x34); // Заповнюємо nonce значенням 0x34
         
-        // В реальній реалізації тут було б використання ChaCha20
-        // For now, we'll just verify the arrays have correct sizes
+        // Використовуємо реальну реалізацію ChaCha20
+        byte[] ciphertext = Crypto.ChaCha20.encrypt(plaintext, key, nonce);
+        assertEquals(plaintext.length, ciphertext.length, "ChaCha20 encryption should produce same length output");
+        
+        // Розшифрування
+        byte[] decrypted = Crypto.ChaCha20.decrypt(ciphertext, key, nonce);
+        assertArrayEquals(plaintext, decrypted, "ChaCha20 decryption should recover original data");
+        
         assertEquals(32, key.length, "ChaCha20 key should be 32 bytes");
         assertEquals(12, nonce.length, "ChaCha20 nonce should be 12 bytes");
         assertTrue(plaintext.length > 0, "Plaintext should not be empty");

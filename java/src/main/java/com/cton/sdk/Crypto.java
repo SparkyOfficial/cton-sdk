@@ -89,6 +89,9 @@ public class Crypto {
         // Створення приватного ключа з мнемоніки
         Pointer crypto_mnemonic_to_private_key(Pointer mnemonic);
         
+        // ChaCha20 encryption
+        Pointer crypto_chacha20_encrypt(byte[] data, int dataLen, byte[] key, byte[] nonce);
+        
         // Функція для звільнення пам'яті рядків
         void free_string(Pointer str);
         
@@ -375,7 +378,7 @@ public class Crypto {
             if (closed) {
                 throw new IllegalStateException("Secp256k1PublicKey has been closed");
             }
-            // For now, we'll use a larger buffer to accommodate both compressed and uncompressed keys
+            // Use a buffer that can accommodate both compressed (33 bytes) and uncompressed (65 bytes) keys
             byte[] buffer = new byte[65];
             int result = CtonLibrary.INSTANCE.secp256k1_public_key_get_data(nativePublicKey, buffer, 65);
             if (result > 0) {
@@ -410,6 +413,69 @@ public class Crypto {
                 nativePublicKey = null;
                 closed = true;
             }
+        }
+    }
+    
+    /**
+     * Шифрування даних за допомогою ChaCha20
+     */
+    public static class ChaCha20 {
+        /**
+         * Шифрування даних за допомогою ChaCha20
+         * @param data дані для шифрування
+         * @param key ключ шифрування (32 байти)
+         * @param nonce nonce (12 байтів)
+         * @return зашифровані дані
+         */
+        public static byte[] encrypt(byte[] data, byte[] key, byte[] nonce) {
+            // Використовуємо нативну реалізацію ChaCha20 через OpenSSL
+            // Use native ChaCha20 implementation through OpenSSL
+            return encryptNative(data, key, nonce);
+        }
+        
+        /**
+         * Розшифрування даних за допомогою ChaCha20
+         * @param data зашифровані дані
+         * @param key ключ шифрування (32 байти)
+         * @param nonce nonce (12 байтів)
+         * @return розшифровані дані
+         */
+        public static byte[] decrypt(byte[] data, byte[] key, byte[] nonce) {
+            // ChaCha20 decryption is the same as encryption
+            return encrypt(data, key, nonce);
+        }
+        
+        // Нативна реалізація ChaCha20
+        // Native ChaCha20 implementation
+        private static byte[] encryptNative(byte[] data, byte[] key, byte[] nonce) {
+            if (data == null || key == null || nonce == null) {
+                throw new IllegalArgumentException("Data, key, and nonce cannot be null");
+            }
+            
+            if (key.length != 32) {
+                throw new IllegalArgumentException("Key must be exactly 32 bytes");
+            }
+            
+            if (nonce.length != 12) {
+                throw new IllegalArgumentException("Nonce must be exactly 12 bytes");
+            }
+            
+            Pointer resultPtr = CtonLibrary.INSTANCE.crypto_chacha20_encrypt(
+                data, data.length, key, nonce);
+            
+            if (resultPtr == null) {
+                // Return empty array if encryption failed
+                return new byte[0];
+            }
+            
+            // Get the size of the result
+            // For ChaCha20, the output size is the same as input size
+            byte[] result = resultPtr.getByteArray(0, data.length);
+            
+            // Free the memory allocated in C++
+            Native.free(Pointer.nativeValue(resultPtr));
+            
+            return result;
         }
     }
     

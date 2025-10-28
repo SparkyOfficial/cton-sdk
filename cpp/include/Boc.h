@@ -78,6 +78,13 @@ namespace cton {
         std::shared_ptr<Cell> root_;
         
         /**
+         * @brief Обчислити CRC32
+         * @param data дані для обчислення CRC
+         * @return значення CRC32
+         */
+        static uint32_t calculateCRC32(const std::vector<uint8_t>& data);
+        
+        /**
          * @brief Рекурсивно зібрати всі комірки в дереві
          * @param cell поточна комірка
          * @param cells вектор для збору комірок

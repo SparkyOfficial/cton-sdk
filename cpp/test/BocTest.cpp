@@ -59,7 +59,7 @@ TEST(BocDeserialize) {
         0x80,                    // Cell descriptor (has bits, 0 refs)
         0x08,                    // Bit size (8 bits)
         0xFF,                    // Cell data (1 byte)
-        0x00, 0x00               // CRC (placeholder)
+        0x84, 0x39, 0x4D, 0x36  // CRC32 (calculated for the data above)
     };
     
     // Test deserialization

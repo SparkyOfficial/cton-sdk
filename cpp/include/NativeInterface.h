@@ -1,4 +1,4 @@
-// NativeInterface.h - C-стильовий інтерфейс для JNA
+// NativeInterface.h - C-стиловий інтерфейс для JNA
 // Author: Андрій Будильников (Sparky)
 // C-style interface for JNA bindings
 // C-стильовой интерфейс для JNA биндингов
@@ -88,6 +88,7 @@ extern "C" {
                          const uint8_t* signature, int signatureLen);
     CTON_SDK_CORE_API char** crypto_generate_mnemonic();
     CTON_SDK_CORE_API void* crypto_mnemonic_to_private_key(char** mnemonic);
+    CTON_SDK_CORE_API void* crypto_chacha20_encrypt(const uint8_t* data, int dataLen, const uint8_t* key, const uint8_t* nonce);
 
     // BOC functions
     CTON_SDK_CORE_API void* boc_create();

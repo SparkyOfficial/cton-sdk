@@ -107,8 +107,68 @@ public class Subscription extends Contract {
         }
         
         // Обробляємо результат (спрощена реалізація)
-        // In a real implementation, we would parse the actual stack data
-        return new SubscriptionInfo(subscriptionId, BigInteger.ZERO, 0, 0, 0, false);
+        // Parse the actual stack data
+        com.google.gson.JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 5) {
+            throw new IOException("Invalid subscription info format");
+        }
+        
+        // Parse amount (element 0)
+        com.google.gson.JsonElement amountElement = stackArray.get(0);
+        if (!amountElement.isJsonArray()) {
+            throw new IOException("Invalid amount data format");
+        }
+        com.google.gson.JsonArray amountArray = amountElement.getAsJsonArray();
+        if (amountArray.size() < 2) {
+            throw new IOException("Invalid amount array format");
+        }
+        BigInteger amount = new BigInteger(amountArray.get(1).getAsString());
+        
+        // Parse period (element 1)
+        com.google.gson.JsonElement periodElement = stackArray.get(1);
+        if (!periodElement.isJsonArray()) {
+            throw new IOException("Invalid period data format");
+        }
+        com.google.gson.JsonArray periodArray = periodElement.getAsJsonArray();
+        if (periodArray.size() < 2) {
+            throw new IOException("Invalid period array format");
+        }
+        long period = Long.parseLong(periodArray.get(1).getAsString());
+        
+        // Parse timeout (element 2)
+        com.google.gson.JsonElement timeoutElement = stackArray.get(2);
+        if (!timeoutElement.isJsonArray()) {
+            throw new IOException("Invalid timeout data format");
+        }
+        com.google.gson.JsonArray timeoutArray = timeoutElement.getAsJsonArray();
+        if (timeoutArray.size() < 2) {
+            throw new IOException("Invalid timeout array format");
+        }
+        long timeout = Long.parseLong(timeoutArray.get(1).getAsString());
+        
+        // Parse last payment (element 3)
+        com.google.gson.JsonElement lastPaymentElement = stackArray.get(3);
+        if (!lastPaymentElement.isJsonArray()) {
+            throw new IOException("Invalid last payment data format");
+        }
+        com.google.gson.JsonArray lastPaymentArray = lastPaymentElement.getAsJsonArray();
+        if (lastPaymentArray.size() < 2) {
+            throw new IOException("Invalid last payment array format");
+        }
+        long lastPayment = Long.parseLong(lastPaymentArray.get(1).getAsString());
+        
+        // Parse active status (element 4)
+        com.google.gson.JsonElement activeElement = stackArray.get(4);
+        if (!activeElement.isJsonArray()) {
+            throw new IOException("Invalid active status data format");
+        }
+        com.google.gson.JsonArray activeArray = activeElement.getAsJsonArray();
+        if (activeArray.size() < 2) {
+            throw new IOException("Invalid active status array format");
+        }
+        boolean active = !"0".equals(activeArray.get(1).getAsString());
+        
+        return new SubscriptionInfo(subscriptionId, amount, period, timeout, lastPayment, active);
     }
     
     /**
@@ -126,7 +186,26 @@ public class Subscription extends Contract {
         }
         
         // Обробляємо результат (спрощена реалізація)
-        return 0;
+        // Parse the actual stack data
+        com.google.gson.JsonArray stackArray = result.getAsJsonArray("result");
+        if (stackArray.size() < 1) {
+            throw new IOException("Invalid total subscriptions format");
+        }
+        
+        // Total subscriptions - перший елемент стеку
+        com.google.gson.JsonElement totalElement = stackArray.get(0);
+        if (!totalElement.isJsonArray()) {
+            throw new IOException("Invalid total subscriptions data format");
+        }
+        
+        com.google.gson.JsonArray totalArray = totalElement.getAsJsonArray();
+        if (totalArray.size() < 2) {
+            throw new IOException("Invalid total subscriptions array format");
+        }
+        
+        // Другий елемент містить значення
+        String totalStr = totalArray.get(1).getAsString();
+        return Long.parseLong(totalStr);
     }
     
     /**

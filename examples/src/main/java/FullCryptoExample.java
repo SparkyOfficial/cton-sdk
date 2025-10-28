@@ -93,13 +93,14 @@ public class FullCryptoExample {
             byte[] nonce = new byte[12];
             Arrays.fill(nonce, (byte) 0x34); // Заповнюємо nonce значенням 0x34
             
-            // В реальній реалізації тут було б використання ChaCha20
-            // For now, we'll simulate the encryption
-            System.out.println("   ChaCha20 encryption would encrypt " + plaintext.length + " bytes");
-            System.out.println("   Using 32-byte key and 12-byte nonce");
+            // Використовуємо реальну реалізацію ChaCha20
+            byte[] ciphertext = Crypto.ChaCha20.encrypt(plaintext, key, nonce);
+            System.out.println("   ChaCha20 encryption: " + plaintext.length + " bytes -> " + ciphertext.length + " bytes");
             
-            // Симуляція розшифрування
-            System.out.println("   ChaCha20 decryption would decrypt the ciphertext back to original");
+            // Розшифрування
+            byte[] decrypted = Crypto.ChaCha20.decrypt(ciphertext, key, nonce);
+            String decryptedMessage = new String(decrypted);
+            System.out.println("   ChaCha20 decryption: " + decryptedMessage);
             
             System.out.println("\nExample completed successfully!");
             System.out.println("All cryptographic algorithms are working correctly!");

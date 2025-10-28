@@ -311,10 +311,16 @@ namespace cton {
         // Add CRC if needed
         // Добавляем CRC, если нужно
         if (hashCRC) {
-            // Для простоти, додаємо 4 нульових байти
-            // For simplicity, add 4 zero bytes
-            // Для простоты, добавляем 4 нулевых байта
-            result.insert(result.end(), 4, 0);
+            // Обчислюємо CRC32 від даних
+            // Calculate CRC32 of the data
+            uint32_t crc = Boc::calculateCRC32(result);
+            
+            // Додаємо CRC до результату (у зворотному порядку байтів)
+            // Add CRC to result (in reverse byte order)
+            result.push_back((crc >> 24) & 0xFF);
+            result.push_back((crc >> 16) & 0xFF);
+            result.push_back((crc >> 8) & 0xFF);
+            result.push_back(crc & 0xFF);
         }
         
         return result;
@@ -671,6 +677,36 @@ namespace cton {
         std::vector<uint8_t> result(data_.begin() + offset_, data_.begin() + offset_ + size);
         offset_ += size;
         return result;
+    }
+    
+    // CRC32 implementation for BOC
+    uint32_t Boc::calculateCRC32(const std::vector<uint8_t>& data) {
+        static uint32_t crcTable[256];
+        static bool tableInitialized = false;
+        
+        // Initialize CRC table if not already done
+        if (!tableInitialized) {
+            for (int i = 0; i < 256; i++) {
+                uint32_t crc = i;
+                for (int j = 0; j < 8; j++) {
+                    if (crc & 1) {
+                        crc = (crc >> 1) ^ 0xEDB88320;
+                    } else {
+                        crc >>= 1;
+                    }
+                }
+                crcTable[i] = crc;
+            }
+            tableInitialized = true;
+        }
+        
+        // Calculate CRC32
+        uint32_t crc = 0xFFFFFFFF;
+        for (uint8_t byte : data) {
+            crc = (crc >> 8) ^ crcTable[(crc ^ byte) & 0xFF];
+        }
+        
+        return crc ^ 0xFFFFFFFF;
     }
     
     BocBuilder::BocBuilder(std::shared_ptr<Cell> root) : root_(root) {}

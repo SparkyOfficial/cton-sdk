@@ -971,3 +971,32 @@ void boc_set_root(void* boc, void* rootCell) {
         // Ничего не делаем
     }
 }
+
+// ChaCha20 encryption function
+void* crypto_chacha20_encrypt(const uint8_t* data, int dataLen, const uint8_t* key, const uint8_t* nonce) {
+    if (!data || dataLen <= 0 || !key || !nonce) {
+        return nullptr;
+    }
+    
+    try {
+        // Convert to vectors
+        std::vector<uint8_t> dataVec(data, data + dataLen);
+        std::vector<uint8_t> keyVec(key, key + 32);
+        std::vector<uint8_t> nonceVec(nonce, nonce + 12);
+        
+        // Encrypt using ChaCha20
+        auto encrypted = cton::ChaCha20::encrypt(dataVec, keyVec, nonceVec);
+        
+        // Allocate memory for the result and copy it
+        uint8_t* result = (uint8_t*)malloc(encrypted.size());
+        if (result) {
+            std::memcpy(result, encrypted.data(), encrypted.size());
+        }
+        return result;
+    } catch (const std::bad_alloc&) {
+        // Handle memory allocation failure
+        return nullptr;
+    } catch (...) {
+        return nullptr;
+    }
+}

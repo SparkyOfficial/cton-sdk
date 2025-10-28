@@ -8,9 +8,11 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -103,11 +105,11 @@ public class CryptoTest {
         // Test that verify doesn't crash
         try {
             boolean result = publicKey.verifySignature(message, signature);
-            // Result doesn't matter for placeholder implementation
-            assertTrue(true);
+            // Test with a real implementation
+            assertTrue(true); // Method should not crash
         } catch (Exception e) {
-            // Might not be fully implemented yet
-            assertTrue(true);
+            // Should not throw exceptions with valid inputs
+            fail("PublicKey.verifySignature should not throw exceptions with valid inputs");
         }
     }
     
@@ -116,14 +118,23 @@ public class CryptoTest {
         Crypto.PrivateKey privateKey = Crypto.PrivateKey.generate();
         byte[] message = {0x01, 0x02, 0x03, 0x04};
         
-        // Test that sign doesn't crash
+        // Test that sign works correctly
         try {
             byte[] signature = Crypto.sign(privateKey, message);
             // Should return 64 bytes for Ed25519
             assertEquals(64, signature.length);
+            // Signature should not be all zeros
+            boolean allZero = true;
+            for (byte b : signature) {
+                if (b != 0) {
+                    allZero = false;
+                    break;
+                }
+            }
+            assertFalse(allZero, "Signature should not be all zeros");
         } catch (Exception e) {
-            // Sign might not be fully implemented yet
-            assertTrue(true);
+            // Should not throw exceptions with valid inputs
+            fail("Crypto.sign should not throw exceptions with valid inputs: " + e.getMessage());
         }
     }
     
@@ -139,11 +150,11 @@ public class CryptoTest {
         // Test that verify doesn't crash
         try {
             boolean result = Crypto.verify(publicKey, message, signature);
-            // Result doesn't matter for placeholder implementation
-            assertTrue(true);
+            // Test with a real implementation
+            assertTrue(true); // Method should not crash
         } catch (Exception e) {
-            // Verify might not be fully implemented yet
-            assertTrue(true);
+            // Should not throw exceptions with valid inputs
+            fail("Crypto.verify should not throw exceptions with valid inputs");
         }
     }
     
