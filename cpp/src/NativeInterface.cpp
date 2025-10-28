@@ -183,9 +183,8 @@ int cell_get_refs_count(void* cell) {
     }
     
     try {
-        // This function is not implemented in the Cell class
-        // We'll return 0 for now
-        return 0;
+        auto refs = static_cast<Cell*>(cell)->getReferences();
+        return static_cast<int>(refs.size());
     } catch (const std::exception&) {
         // Handle standard exceptions
         return -1;
@@ -196,14 +195,24 @@ int cell_get_refs_count(void* cell) {
 }
 
 void* cell_get_ref(void* cell, int index) {
-    if (!cell) {
+    if (!cell || index < 0) {
         return nullptr;
     }
     
     try {
-        // This function is not implemented in the Cell class
-        // We'll return nullptr for now
-        return nullptr;
+        auto refs = static_cast<Cell*>(cell)->getReferences();
+        if (index >= static_cast<int>(refs.size())) {
+            return nullptr;
+        }
+        
+        // Lock the weak_ptr to get the shared_ptr
+        auto ref = refs[index].lock();
+        if (!ref) {
+            return nullptr;
+        }
+        
+        // Return the raw pointer to the Cell object
+        return ref.get();
     } catch (const std::exception&) {
         // Handle standard exceptions
         return nullptr;
@@ -881,6 +890,23 @@ void* boc_serialize(void* boc, bool hasIdx, bool hashCRC) {
         return nullptr;
     } catch (...) {
         return nullptr;
+    }
+}
+
+int boc_get_serialized_size(void* boc, bool hasIdx, bool hashCRC) {
+    if (!boc) {
+        return -1;
+    }
+    
+    try {
+        std::vector<uint8_t> data = static_cast<Boc*>(boc)->serialize(hasIdx, hashCRC);
+        return static_cast<int>(data.size());
+    } catch (const std::exception&) {
+        // Handle standard exceptions
+        return -1;
+    } catch (...) {
+        // Handle any other unexpected exceptions
+        return -1;
     }
 }
 

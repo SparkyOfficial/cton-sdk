@@ -32,6 +32,9 @@ public class Boc implements Closeable {
         // Серіалізувати BOC в бінарне представлення
         Pointer boc_serialize(Pointer boc, boolean hasIdx, boolean hashCRC);
         
+        // Отримати розмір серіалізованих даних BOC
+        int boc_get_serialized_size(Pointer boc, boolean hasIdx, boolean hashCRC);
+        
         // Десеріалізувати BOC з бінарного представлення
         Pointer boc_deserialize(byte[] data, int length);
         
@@ -80,10 +83,26 @@ public class Boc implements Closeable {
         if (closed) {
             throw new IllegalStateException("Boc has been closed");
         }
+        
+        // Отримуємо розмір серіалізованих даних
+        int size = CtonLibrary.INSTANCE.boc_get_serialized_size(nativeBoc, hasIdx, hashCRC);
+        if (size <= 0) {
+            return new byte[0];
+        }
+        
+        // Серіалізуємо дані
         Pointer dataPtr = CtonLibrary.INSTANCE.boc_serialize(nativeBoc, hasIdx, hashCRC);
-        // В реальній реалізації тут має бути конвертація з Pointer в byte[]
-        // For now return empty array
-        return new byte[0];
+        if (dataPtr == null) {
+            return new byte[0];
+        }
+        
+        // Конвертуємо Pointer в byte[]
+        byte[] result = dataPtr.getByteArray(0, size);
+        
+        // Звільняємо пам'ять, виділену в C++
+        Native.free(Pointer.nativeValue(dataPtr));
+        
+        return result;
     }
     
     /**

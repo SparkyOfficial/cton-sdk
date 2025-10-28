@@ -94,6 +94,7 @@ extern "C" {
     CTON_SDK_CORE_API void* boc_create_with_root(void* rootCell);
     CTON_SDK_CORE_API void boc_destroy(void* boc);
     CTON_SDK_CORE_API void* boc_serialize(void* boc, bool hasIdx, bool hashCRC);
+    CTON_SDK_CORE_API int boc_get_serialized_size(void* boc, bool hasIdx, bool hashCRC);  // New function
     CTON_SDK_CORE_API void* boc_deserialize(const uint8_t* data, int length);
     CTON_SDK_CORE_API void* boc_get_root(void* boc);
     CTON_SDK_CORE_API void boc_set_root(void* boc, void* rootCell);
