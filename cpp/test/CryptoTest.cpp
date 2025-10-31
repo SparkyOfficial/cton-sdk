@@ -7,6 +7,12 @@
 #include "../include/Crypto.h"
 #include <cstring>
 
+// Include OpenSSL headers to check if they're available
+#ifdef OPENSSL_AVAILABLE
+#include <openssl/evp.h>
+#include <openssl/err.h>
+#endif
+
 using namespace cton;
 
 TEST(PrivateKeyCreation) {
@@ -175,6 +181,15 @@ TEST(CryptoKeyPairConsistency) {
     std::vector<uint8_t> differentMessage = {0x05, 0x04, 0x03, 0x02, 0x01};
     bool isInvalid = Crypto::verify(publicKey, differentMessage, signature);
     ASSERT_FALSE(isInvalid);
+}
+
+// New test to check if OpenSSL is available and working
+TEST(OpenSSLAvailability) {
+#ifdef OPENSSL_AVAILABLE
+    ASSERT_TRUE(true); // OpenSSL is available
+#else
+    ASSERT_TRUE(false); // OpenSSL is not available
+#endif
 }
 
 int main() {

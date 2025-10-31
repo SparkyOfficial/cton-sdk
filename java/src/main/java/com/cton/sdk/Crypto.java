@@ -468,12 +468,15 @@ public class Crypto {
                 return new byte[0];
             }
             
-            // Get the size of the result
-            // For ChaCha20, the output size is the same as input size
+            // For ChaCha20, the output size is the same as the input size
             byte[] result = resultPtr.getByteArray(0, data.length);
             
             // Free the memory allocated in C++
-            Native.free(Pointer.nativeValue(resultPtr));
+            try {
+                Native.free(Pointer.nativeValue(resultPtr));
+            } catch (Exception e) {
+                // Ignore errors during memory freeing
+            }
             
             return result;
         }

@@ -10,6 +10,7 @@
 #include <vector>
 #include <string>
 #include <memory>
+#include <cstdint>
 
 // Export definitions for Windows DLL
 #ifdef _WIN32

@@ -978,19 +978,67 @@ void* crypto_chacha20_encrypt(const uint8_t* data, int dataLen, const uint8_t* k
         return nullptr;
     }
     
+    // For ChaCha20, we expect exactly 32 bytes for key and 12 bytes for nonce
+    // The caller must ensure these sizes are correct
+    
     try {
-        // Convert to vectors
+        // Convert to vectors - using the exact sizes expected by ChaCha20
+        // We need to be careful here to not read past the end of the arrays
         std::vector<uint8_t> dataVec(data, data + dataLen);
-        std::vector<uint8_t> keyVec(key, key + 32);
-        std::vector<uint8_t> nonceVec(nonce, nonce + 12);
+        
+        // Create key vector safely - we know we need exactly 32 bytes
+        std::vector<uint8_t> keyVec(32);
+        std::memcpy(keyVec.data(), key, 32);
+        
+        // Create nonce vector safely - we know we need exactly 12 bytes
+        std::vector<uint8_t> nonceVec(12);
+        std::memcpy(nonceVec.data(), nonce, 12);
+        
+        // Validate that we have the correct sizes
+        if (dataVec.size() != (size_t)dataLen) {
+            return nullptr;
+        }
+        
+        if (keyVec.size() != 32) {
+            return nullptr;
+        }
+        
+        if (nonceVec.size() != 12) {
+            return nullptr;
+        }
+        
+        // Debug output
+        // std::cout << "crypto_chacha20_encrypt: dataLen=" << dataLen << std::endl;
+        // std::cout << "crypto_chacha20_encrypt: key[0..4]=" << (int)keyVec[0] << " " << (int)keyVec[1] << " " << (int)keyVec[2] << " " << (int)keyVec[3] << std::endl;
+        // std::cout << "crypto_chacha20_encrypt: nonce[0..4]=" << (int)nonceVec[0] << " " << (int)nonceVec[1] << " " << (int)nonceVec[2] << " " << (int)nonceVec[3] << std::endl;
         
         // Encrypt using ChaCha20
         auto encrypted = cton::ChaCha20::encrypt(dataVec, keyVec, nonceVec);
         
+        // Validate that encryption worked
+        if (encrypted.size() != dataVec.size()) {
+            return nullptr;
+        }
+        
+        // Additional validation - make sure we have data
+        if (encrypted.empty() && !dataVec.empty()) {
+            return nullptr;
+        }
+        
+        // Debug output
+        // std::cout << "crypto_chacha20_encrypt: encrypted.size()=" << encrypted.size() << std::endl;
+        // std::cout << "crypto_chacha20_encrypt: encrypted[0..4]=" << (int)encrypted[0] << " " << (int)encrypted[1] << " " << (int)encrypted[2] << " " << (int)encrypted[3] << std::endl;
+        
         // Allocate memory for the result and copy it
         uint8_t* result = (uint8_t*)malloc(encrypted.size());
-        if (result) {
+        if (result && encrypted.size() > 0) {
             std::memcpy(result, encrypted.data(), encrypted.size());
+        } else if (result) {
+            // Handle zero-size allocation
+            // result is already allocated but empty
+        } else {
+            // malloc failed
+            return nullptr;
         }
         return result;
     } catch (const std::bad_alloc&) {
@@ -1000,3 +1048,5 @@ void* crypto_chacha20_encrypt(const uint8_t* data, int dataLen, const uint8_t* k
         return nullptr;
     }
 }
+
+

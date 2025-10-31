@@ -6,6 +6,9 @@ cmake_minimum_required(VERSION 3.10)
 project(cton-sdk-core)
 set(CMAKE_CXX_STANDARD 17)
 
+# Handle Cyrillic characters in path
+cmake_policy(SET CMP0049 NEW)
+
 # Add source files
 file(GLOB_RECURSE SOURCES "src/*.cpp")
 file(GLOB_RECURSE HEADERS "include/*.h" "include/*.hpp")
@@ -81,24 +84,62 @@ target_link_libraries(benchmark_test cton-sdk-core)
 add_executable(integration_test test/IntegrationTest.cpp)
 target_link_libraries(integration_test cton-sdk-core)
 
+# Create debug test executable
+add_executable(debug_test debug_test.cpp)
+target_link_libraries(debug_test cton-sdk-core)
+
+# Create ChaCha20 test executable
+add_executable(chacha20_test chacha20_test.cpp)
+target_link_libraries(chacha20_test cton-sdk-core)
+
+# Create JNA debug test executable
+add_executable(jna_debug_test jna_debug_test.cpp)
+target_link_libraries(jna_debug_test cton-sdk-core)
+
+# Create ChaCha20 JNA test executable
+add_executable(chacha20_jna_test chacha20_jna_test.cpp)
+target_link_libraries(chacha20_jna_test cton-sdk-core)
+
+# Create ChaCha20 debug test executable
+add_executable(chacha20_debug_test chacha20_debug_test.cpp)
+target_link_libraries(chacha20_debug_test cton-sdk-core)
+
+# Create ChaCha20 simple test executable
+add_executable(chacha20_simple_test chacha20_simple_test.cpp)
+target_link_libraries(chacha20_simple_test cton-sdk-core)
+
+# Create ChaCha20 double encryption test executable
+add_executable(chacha20_double_encrypt_test chacha20_double_encrypt_test.cpp)
+target_link_libraries(chacha20_double_encrypt_test cton-sdk-core)
+
+# Create ChaCha20 Java mimic test executable
+add_executable(chacha20_java_mimic_test chacha20_java_mimic_test.cpp)
+target_link_libraries(chacha20_java_mimic_test cton-sdk-core)
+
+# Create ChaCha20 Java mimic exact test executable
+add_executable(chacha20_java_mimic_exact_test chacha20_java_mimic_exact_test.cpp)
+target_link_libraries(chacha20_java_mimic_exact_test cton-sdk-core)
+
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
 # Manual OpenSSL configuration
-set(OPENSSL_ROOT_DIR "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0")
-set(OPENSSL_INCLUDE_DIR "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include")
+set(OPENSSL_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0")
+set(OPENSSL_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/include")
 
 # Include OpenSSL headers
 target_include_directories(cton-sdk-core PUBLIC ${OPENSSL_INCLUDE_DIR})
 
 # Try to find precompiled OpenSSL libraries in common locations
 set(OPENSSL_LIB_PATHS
-    "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/lib"
-    "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/lib64"
-    "C:/Users/Богдан/Desktop/cton-sdk/vcpkg/installed/x64-windows/lib"
-    "C:/Users/Богдан/Desktop/cton-sdk/vcpkg/installed/x64-windows/lib/manual-link"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/install/lib64"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/lib64"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/installed/x64-windows/lib"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/installed/x64-windows/lib/manual-link"
     "C:/OpenSSL/lib"
 )
 
@@ -108,14 +149,33 @@ foreach(LIB_PATH ${OPENSSL_LIB_PATHS})
         target_link_libraries(cton-sdk-core PRIVATE 
             "${LIB_PATH}/libcrypto.lib"
             "${LIB_PATH}/libssl.lib")
-        target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
+        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+        # Also set for test executables
+        target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
         message(STATUS "Using OpenSSL libraries from: ${LIB_PATH}")
+        break()
+    elseif(EXISTS "${LIB_PATH}/libcrypto.dll.a")
+        target_link_libraries(cton-sdk-core PRIVATE 
+            "${LIB_PATH}/libcrypto.dll.a"
+            "${LIB_PATH}/libssl.dll.a")
+        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+        # Also set for test executables
+        target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+        message(STATUS "Using OpenSSL DLL import libraries from: ${LIB_PATH}")
         break()
     elseif(EXISTS "${LIB_PATH}/libcrypto.a")
         target_link_libraries(cton-sdk-core PRIVATE 
             "${LIB_PATH}/libcrypto.a"
             "${LIB_PATH}/libssl.a")
-        target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
+        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+        # Also set for test executables
+        target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
         message(STATUS "Using OpenSSL libraries from: ${LIB_PATH}")
         break()
     endif()
@@ -126,7 +186,7 @@ if(NOT TARGET OpenSSL::Crypto)
     find_package(OpenSSL QUIET)
     if(OPENSSL_FOUND)
         target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-        target_compile_definitions(cton-sdk-core PRIVATE USE_OPENSSL)
+        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE)
         message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
     else()
         message(WARNING "OpenSSL libraries not found, crypto functionality will be limited")
@@ -161,6 +221,7 @@ target_include_directories(address_test PUBLIC
 target_include_directories(crypto_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(boc_test PUBLIC 
@@ -181,6 +242,7 @@ target_include_directories(comprehensive_test PUBLIC
 target_include_directories(ed25519_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(boc_compliance_test PUBLIC 
@@ -201,6 +263,7 @@ target_include_directories(bip39_compliance_test PUBLIC
 target_include_directories(crypto_algorithms_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(boc_performance_test PUBLIC 
