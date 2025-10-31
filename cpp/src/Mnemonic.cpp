@@ -10,133 +10,10 @@
 #include <sstream>
 #include <algorithm>
 
-// Try to include OpenSSL if available
-#ifdef USE_OPENSSL
-#if __has_include("C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include/openssl/sha.h")
-#include "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include/openssl/sha.h"
-#include "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include/openssl/evp.h"
-#include "C:/Users/Богдан/Desktop/cton-sdk/openssl-3.6.0/include/openssl/kdf.h"
-#define OPENSSL_AVAILABLE 1
-#else
-#define OPENSSL_AVAILABLE 0
-#endif
-#else
-#define OPENSSL_AVAILABLE 0
-#endif
-
-#ifndef USE_OPENSSL
-#define OPENSSL_AVAILABLE 0
-#endif
-
-#if OPENSSL_AVAILABLE
-#include <openssl/sha.h>
-#include <openssl/evp.h>
-#include <openssl/kdf.h>
-#else
-// Fallback implementation for SHA256
-// This is a simplified implementation for demonstration purposes
-// In production, you should use a proper cryptographic library
-static void sha256_fallback(const uint8_t* data, size_t len, uint8_t* hash) {
-    // Simple SHA256 implementation for fallback
-    // Based on the standard SHA256 algorithm
-    
-    // SHA256 constants
-    static const uint32_t k[64] = {
-        0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
-        0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
-        0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
-        0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
-        0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
-        0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
-        0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
-        0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
-    };
-    
-    // Initialize hash values
-    uint32_t h[8] = {
-        0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
-    };
-    
-    // Pre-processing
-    size_t original_len = len;
-    size_t new_len = len + 1;
-    while ((new_len % 64) != 56) {
-        new_len++;
-    }
-    new_len += 8;
-    
-    uint8_t* padded_data = new uint8_t[new_len];
-    memcpy(padded_data, data, len);
-    padded_data[len] = 0x80;
-    memset(padded_data + len + 1, 0, new_len - len - 1);
-    
-    // Append original length in bits as 64-bit big-endian integer
-    uint64_t bit_len = original_len * 8;
-    for (int i = 0; i < 8; i++) {
-        padded_data[new_len - 8 + i] = (bit_len >> (56 - 8 * i)) & 0xFF;
-    }
-    
-    // Process message in 512-bit chunks
-    for (size_t chunk = 0; chunk < new_len; chunk += 64) {
-        uint32_t w[64];
-        
-        // Break chunk into 16 32-bit words
-        for (int i = 0; i < 16; i++) {
-            w[i] = (padded_data[chunk + 4*i] << 24) | (padded_data[chunk + 4*i + 1] << 16) |
-                   (padded_data[chunk + 4*i + 2] << 8) | padded_data[chunk + 4*i + 3];
-        }
-        
-        // Extend the 16 words into 64 words
-        for (int i = 16; i < 64; i++) {
-            uint32_t s0 = ((w[i-15] >> 7) | (w[i-15] << 25)) ^ ((w[i-15] >> 18) | (w[i-15] << 14)) ^ (w[i-15] >> 3);
-            uint32_t s1 = ((w[i-2] >> 17) | (w[i-2] << 15)) ^ ((w[i-2] >> 19) | (w[i-2] << 13)) ^ (w[i-2] >> 10);
-            w[i] = w[i-16] + s0 + w[i-7] + s1;
-        }
-        
-        // Initialize working variables
-        uint32_t a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
-        
-        // Main loop
-        for (int i = 0; i < 64; i++) {
-            uint32_t S1 = ((e >> 6) | (e << 26)) ^ ((e >> 11) | (e << 21)) ^ ((e >> 25) | (e << 7));
-            uint32_t ch = (e & f) ^ ((~e) & g);
-            uint32_t temp1 = hh + S1 + ch + k[i] + w[i];
-            uint32_t S0 = ((a >> 2) | (a << 30)) ^ ((a >> 13) | (a << 19)) ^ ((a >> 22) | (a << 10));
-            uint32_t maj = (a & b) ^ (a & c) ^ (b & c);
-            uint32_t temp2 = S0 + maj;
-            
-            hh = g;
-            g = f;
-            f = e;
-            e = d + temp1;
-            d = c;
-            c = b;
-            b = a;
-            a = temp1 + temp2;
-        }
-        
-        // Add this chunk's hash to result so far
-        h[0] += a;
-        h[1] += b;
-        h[2] += c;
-        h[3] += d;
-        h[4] += e;
-        h[5] += f;
-        h[6] += g;
-        h[7] += hh;
-    }
-    
-    // Produce the final hash value
-    for (int i = 0; i < 8; i++) {
-        hash[4*i] = (h[i] >> 24) & 0xFF;
-        hash[4*i + 1] = (h[i] >> 16) & 0xFF;
-        hash[4*i + 2] = (h[i] >> 8) & 0xFF;
-        hash[4*i + 3] = h[i] & 0xFF;
-    }
-    
-    delete[] padded_data;
-}
-#endif
+// Include OpenSSL
+#include "../../openssl-3.6.0/include/openssl/sha.h"
+#include "../../openssl-3.6.0/include/openssl/evp.h"
+#include "../../openssl-3.6.0/include/openssl/kdf.h"
 
 namespace cton {
     
@@ -608,14 +485,8 @@ namespace cton {
         
         std::vector<uint8_t> hash(32);
         
-#if OPENSSL_AVAILABLE
+        // Use OpenSSL implementation
         SHA256(entropy.data(), entropy.size(), hash.data());
-#else
-        // Використовуємо fallback реалізацію
-        // Use fallback implementation
-        // Используем fallback реализацию
-        sha256_fallback(entropy.data(), entropy.size(), hash.data());
-#endif
         
         // Повертаємо перші біти в залежності від розміру ентропії
         // Return first bits depending on entropy size

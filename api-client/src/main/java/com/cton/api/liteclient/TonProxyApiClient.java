@@ -7,6 +7,8 @@ package com.cton.api.liteclient;
 
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 import com.google.gson.JsonObject;
@@ -33,6 +35,7 @@ public class TonProxyApiClient implements LiteClient {
     private String baseUrl;
     private boolean connected;
     private final Object lock = new Object();
+    private final ExecutorService executorService;
     
     /**
      * Конструктор
@@ -43,6 +46,7 @@ public class TonProxyApiClient implements LiteClient {
             .connectTimeout(30, TimeUnit.SECONDS)
             .build();
         this.connected = false;
+        this.executorService = Executors.newCachedThreadPool();
     }
     
     @Override
@@ -95,6 +99,14 @@ public class TonProxyApiClient implements LiteClient {
         // Закриваємо WebSocket з'єднання
         // Закрываем WebSocket соединение
         // Close WebSocket connection
+    }
+    
+    /**
+     * Закрити клієнт
+     */
+    public void close() {
+        disconnect();
+        executorService.shutdown();
     }
     
     @Override
@@ -158,7 +170,7 @@ public class TonProxyApiClient implements LiteClient {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-        });
+        }, executorService);
     }
     
     @Override
