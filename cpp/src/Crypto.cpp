@@ -46,37 +46,17 @@ namespace cton {
     }
     
     PrivateKey PrivateKey::generate() {
-        // Генерація випадкових даних для приватного ключа
-        // Random data generation for private key
-        // Генерация случайных данных для приватного ключа
+        // Generate random data for private key
         
         std::vector<uint8_t> keyData(32);
         
 #if OPENSSL_AVAILABLE
-        // Використовуємо OpenSSL якщо доступний
-        // Use OpenSSL if available
-        // Используем OpenSSL если доступен
+        // Use OpenSSL for secure random generation
         if (RAND_bytes(keyData.data(), 32) != 1) {
-            // If RAND_bytes fails, fall back to standard generator
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<int> dis(0, 255);
-            
-            for (size_t i = 0; i < 32; ++i) {
-                keyData[i] = static_cast<uint8_t>(dis(gen));
-            }
+            throw std::runtime_error("Failed to generate secure random bytes");
         }
 #else
-        // Використовуємо стандартний генератор як fallback
-        // Use standard generator as fallback
-        // Используем стандартный генератор как запасной вариант
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> dis(0, 255);
-        
-        for (size_t i = 0; i < 32; ++i) {
-            keyData[i] = static_cast<uint8_t>(dis(gen));
-        }
+        throw std::runtime_error("OpenSSL not available - secure random generation disabled");
 #endif
         
         return PrivateKey(keyData);
@@ -87,21 +67,16 @@ namespace cton {
     }
     
     PublicKey PrivateKey::getPublicKey() const {
-        // Обчислення публічного ключа з приватного
         // Public key derivation from private key
-        // Вычисление публичного ключа из приватного
         
 #if OPENSSL_AVAILABLE
-        // Спробуємо використати OpenSSL для генерації публічного ключа Ed25519
-        // Try to use OpenSSL to generate Ed25519 public key
-        // Попробуем использовать OpenSSL для создания публичного ключа Ed25519
+        // Use OpenSSL to generate Ed25519 public key
         
         // Create private key from raw data
         EVP_PKEY* privKey = EVP_PKEY_new_raw_private_key(EVP_PKEY_ED25519, nullptr, 
                                                         keyData_.data(), keyData_.size());
         if (!privKey) {
-            // Fallback to simple approach
-            return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+            throw std::runtime_error("Failed to create Ed25519 private key");
         }
         
         // Derive public key from private key
@@ -109,17 +84,14 @@ namespace cton {
         std::vector<uint8_t> pubKeyData(pubKeyLen);
         if (EVP_PKEY_get_raw_public_key(privKey, pubKeyData.data(), &pubKeyLen) <= 0) {
             EVP_PKEY_free(privKey);
-            // Fallback to simple approach
-            return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+            throw std::runtime_error("Failed to derive Ed25519 public key");
         }
         
         EVP_PKEY_free(privKey);
         
         return PublicKey(pubKeyData);
 #else
-        // Для простоти, створюємо публічний ключ з перших 32 байтів приватного ключа
-        // For simplicity, create public key from first 32 bytes of private key
-        return PublicKey(std::vector<uint8_t>(keyData_.begin(), keyData_.begin() + 32));
+        throw std::runtime_error("OpenSSL not available - Ed25519 public key derivation disabled");
 #endif
     }
 
@@ -137,14 +109,10 @@ namespace cton {
     
     bool PublicKey::verifySignature(const std::vector<uint8_t>& message, 
                                   const std::vector<uint8_t>& signature) const {
-        // Перевірка підпису
         // Signature verification
-        // Проверка подписи
         
 #if OPENSSL_AVAILABLE
-        // Спробуємо використати OpenSSL для перевірки підпису Ed25519
-        // Try to use OpenSSL to verify Ed25519 signature
-        // Попробуем использовать OpenSSL для проверки подписи Ed25519
+        // Use OpenSSL to verify Ed25519 signature
         
         if (signature.size() != 64) {
             // Invalid signature size
@@ -159,24 +127,21 @@ namespace cton {
         // Create public key from raw data
         pkey = EVP_PKEY_new_raw_public_key(EVP_PKEY_ED25519, nullptr, keyData_.data(), keyData_.size());
         if (!pkey) {
-            // Handle error silently
-            goto cleanup;
+            throw std::runtime_error("Failed to create Ed25519 public key");
         }
-        
-        // Success
         
         // Create MD context
         md_ctx = EVP_MD_CTX_new();
         if (!md_ctx) {
-            // Debug output
-            fprintf(stderr, "EVP_MD_CTX_new failed\n");
-            goto cleanup;
+            EVP_PKEY_free(pkey);
+            throw std::runtime_error("Failed to create message digest context");
         }
         
         // Initialize verification
         if (EVP_DigestVerifyInit(md_ctx, &ctx, nullptr, nullptr, pkey) <= 0) {
-            // Handle error silently
-            goto cleanup;
+            EVP_MD_CTX_free(md_ctx);
+            EVP_PKEY_free(pkey);
+            throw std::runtime_error("Failed to initialize signature verification");
         }
         
         // Verify signature
@@ -184,8 +149,6 @@ namespace cton {
                             message.data(), message.size());
         if (verify_result == 1) {
             result = true;
-        } else {
-            // Handle verification result
         }
         
     cleanup:
@@ -193,6 +156,8 @@ namespace cton {
         if (pkey) EVP_PKEY_free(pkey);
         
         return result;
+#else
+        throw std::runtime_error("OpenSSL not available - Ed25519 signature verification disabled");
 #endif
     }
 
@@ -212,56 +177,29 @@ namespace cton {
         // Generate secp256k1 private key using OpenSSL
         EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
         if (!ec_key) {
-            // Fallback to standard generator with proper key range
-            std::random_device rd;
-            std::mt19937 gen(rd());
-            std::uniform_int_distribution<uint32_t> dis(1, 0xFFFFFFFF);
-            
-            // Generate a valid private key by using OpenSSL's key generation
-            ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
-            if (ec_key && EC_KEY_generate_key(ec_key) == 1) {
-                const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
-                if (priv_key) {
-                    BN_bn2binpad(priv_key, keyData.data(), 32);
-                }
-            } else {
-                // If OpenSSL generation fails, use random data
-                for (size_t i = 0; i < 32; ++i) {
-                    keyData[i] = static_cast<uint8_t>(dis(gen));
-                }
-            }
-            
-            if (ec_key) {
-                EC_KEY_free(ec_key);
-            }
-        } else {
-            if (EC_KEY_generate_key(ec_key) != 1) {
-                // Fallback to standard generator with proper key range
-                std::random_device rd;
-                std::mt19937 gen(rd());
-                std::uniform_int_distribution<uint32_t> dis(1, 0xFFFFFFFF);
-                
-                for (size_t i = 0; i < 32; ++i) {
-                    keyData[i] = static_cast<uint8_t>(dis(gen));
-                }
-            } else {
-                // Extract private key data
-                const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
-                if (priv_key) {
-                    BN_bn2binpad(priv_key, keyData.data(), 32);
-                } else {
-                    // Fallback to standard generator with proper key range
-                    std::random_device rd;
-                    std::mt19937 gen(rd());
-                    std::uniform_int_distribution<uint32_t> dis(1, 0xFFFFFFFF);
-                    
-                    for (size_t i = 0; i < 32; ++i) {
-                        keyData[i] = static_cast<uint8_t>(dis(gen));
-                    }
-                }
-            }
-            EC_KEY_free(ec_key);
+            throw std::runtime_error("Failed to create EC key for secp256k1");
         }
+        
+        if (EC_KEY_generate_key(ec_key) != 1) {
+            EC_KEY_free(ec_key);
+            throw std::runtime_error("Failed to generate secp256k1 key");
+        }
+        
+        // Extract private key data
+        const BIGNUM* priv_key = EC_KEY_get0_private_key(ec_key);
+        if (!priv_key) {
+            EC_KEY_free(ec_key);
+            throw std::runtime_error("Failed to extract private key");
+        }
+        
+        if (BN_bn2binpad(priv_key, keyData.data(), 32) != 32) {
+            EC_KEY_free(ec_key);
+            throw std::runtime_error("Failed to convert private key to binary");
+        }
+        
+        EC_KEY_free(ec_key);
+#else
+        throw std::runtime_error("OpenSSL not available - secp256k1 key generation disabled");
 #endif
         
         return Secp256k1PrivateKey(keyData);
@@ -276,24 +214,21 @@ namespace cton {
         // Generate secp256k1 public key from private key using OpenSSL
         EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
         if (!ec_key) {
-            // Fallback to empty key
-            return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
+            throw std::runtime_error("Failed to create EC key for secp256k1");
         }
         
         // Create private key BIGNUM from key data
         BIGNUM* priv_bn = BN_bin2bn(keyData_.data(), keyData_.size(), nullptr);
         if (!priv_bn) {
             EC_KEY_free(ec_key);
-            // Fallback to empty key
-            return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
+            throw std::runtime_error("Failed to create BIGNUM from private key data");
         }
         
         // Set private key
         if (EC_KEY_set_private_key(ec_key, priv_bn) != 1) {
             BN_free(priv_bn);
             EC_KEY_free(ec_key);
-            // Fallback to empty key
-            return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
+            throw std::runtime_error("Failed to set private key");
         }
         
         // Generate public key from private key
@@ -303,8 +238,7 @@ namespace cton {
             BN_free(priv_bn);
             if (pub_point) EC_POINT_free(pub_point);
             EC_KEY_free(ec_key);
-            // Fallback to empty key
-            return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
+            throw std::runtime_error("Failed to generate public key point");
         }
         
         // Set public key
@@ -312,8 +246,7 @@ namespace cton {
             BN_free(priv_bn);
             EC_POINT_free(pub_point);
             EC_KEY_free(ec_key);
-            // Fallback to empty key
-            return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
+            throw std::runtime_error("Failed to set public key");
         }
         
         // Extract public key in compressed format (33 bytes)
@@ -330,9 +263,10 @@ namespace cton {
             pubKeyData.resize(pubKeyLen);
             return Secp256k1PublicKey(pubKeyData);
         } else {
-            // Fallback to empty key
-            return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
+            throw std::runtime_error("Failed to extract public key");
         }
+#else
+        throw std::runtime_error("OpenSSL not available - secp256k1 public key derivation disabled");
 #endif
     }
 
@@ -360,40 +294,28 @@ namespace cton {
         // Create EC_KEY from public key data
         EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
         if (!ec_key) {
-            return false;
+            throw std::runtime_error("Failed to create EC key for secp256k1");
         }
-        
-        // Debug output
-        // Success
         
         // Set public key
         EC_POINT* pub_point = EC_POINT_new(EC_KEY_get0_group(ec_key));
         if (!pub_point) {
             EC_KEY_free(ec_key);
-            return false;
+            throw std::runtime_error("Failed to create public key point");
         }
-        
-        // Debug output
-        // Success
         
         if (EC_POINT_oct2point(EC_KEY_get0_group(ec_key), pub_point, 
                               keyData_.data(), keyData_.size(), nullptr) != 1) {
             EC_POINT_free(pub_point);
             EC_KEY_free(ec_key);
-            return false;
+            throw std::runtime_error("Failed to set public key point");
         }
-        
-        // Debug output
-        // Success
         
         if (EC_KEY_set_public_key(ec_key, pub_point) != 1) {
             EC_POINT_free(pub_point);
             EC_KEY_free(ec_key);
-            return false;
+            throw std::runtime_error("Failed to set public key");
         }
-        
-        // Debug output
-        // Success
         
         EC_POINT_free(pub_point);
         
@@ -401,38 +323,39 @@ namespace cton {
         BIGNUM* r = BN_bin2bn(signature.data(), 32, nullptr);
         BIGNUM* s = BN_bin2bn(signature.data() + 32, 32, nullptr);
         if (!r || !s) {
-            // Handle error silently
-            BN_free(r);
-            BN_free(s);
+            if (r) BN_free(r);
+            if (s) BN_free(s);
             EC_KEY_free(ec_key);
-            return false;
+            throw std::runtime_error("Failed to create signature BIGNUMs");
         }
         
         // Create ECDSA_SIG
         ECDSA_SIG* sig = ECDSA_SIG_new();
         if (!sig) {
-            // Handle error silently
             BN_free(r);
             BN_free(s);
             EC_KEY_free(ec_key);
-            return false;
+            throw std::runtime_error("Failed to create ECDSA signature");
         }
         
-        ECDSA_SIG_set0(sig, r, s);
-        
-        // Debug output
-        // About to verify
+        // Set signature components
+        if (ECDSA_SIG_set0(sig, r, s) != 1) {
+            BN_free(r);
+            BN_free(s);
+            ECDSA_SIG_free(sig);
+            EC_KEY_free(ec_key);
+            throw std::runtime_error("Failed to set signature components");
+        }
         
         // Verify signature
         int result = ECDSA_do_verify(message.data(), message.size(), sig, ec_key);
-        
-        // Debug output
-        // Handle verification result
         
         ECDSA_SIG_free(sig);
         EC_KEY_free(ec_key);
         
         return (result == 1);
+#else
+        throw std::runtime_error("OpenSSL not available - secp256k1 signature verification disabled");
 #endif
     }
 
@@ -451,13 +374,13 @@ namespace cton {
         
         EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
-            return std::vector<uint8_t>(); // Return empty vector on error
+            throw std::runtime_error("Failed to create EVP cipher context");
         }
         
         // Initialize encryption
         if (EVP_EncryptInit_ex(ctx, EVP_chacha20(), nullptr, key.data(), nonce.data()) != 1) {
             EVP_CIPHER_CTX_free(ctx);
-            return std::vector<uint8_t>(); // Return empty vector on error
+            throw std::runtime_error("Failed to initialize ChaCha20 encryption");
         }
         
         // Encrypt data
@@ -466,7 +389,7 @@ namespace cton {
         
         if (EVP_EncryptUpdate(ctx, ciphertext.data(), &len, data.data(), data.size()) != 1) {
             EVP_CIPHER_CTX_free(ctx);
-            return std::vector<uint8_t>(); // Return empty vector on error
+            throw std::runtime_error("Failed to encrypt data with ChaCha20");
         }
         
         // For stream ciphers like ChaCha20, we don't need to call EVP_EncryptFinal_ex
@@ -474,6 +397,8 @@ namespace cton {
         EVP_CIPHER_CTX_free(ctx);
         
         return ciphertext;
+#else
+        throw std::runtime_error("OpenSSL not available - ChaCha20 encryption disabled");
 #endif
     }
     
@@ -486,14 +411,10 @@ namespace cton {
 
     std::vector<uint8_t> Crypto::sign(const PrivateKey& privateKey, 
                                     const std::vector<uint8_t>& message) {
-        // Створення підпису
         // Signature creation
-        // Создание подписи
         
 #if OPENSSL_AVAILABLE
-        // Спробуємо використати OpenSSL для створення підпису Ed25519
-        // Try to use OpenSSL to create Ed25519 signature
-        // Попробуем использовать OpenSSL для создания подписи Ed25519
+        // Use OpenSSL to create Ed25519 signature
         
         EVP_PKEY_CTX* ctx = nullptr;
         EVP_PKEY* pkey = nullptr;
@@ -507,34 +428,31 @@ namespace cton {
                                            privateKey.getData().data(), 
                                            privateKey.getData().size());
         if (!pkey) {
-            // Handle error silently
-            goto cleanup;
+            throw std::runtime_error("Failed to create Ed25519 private key");
         }
-        
-        // Success
         
         // Create MD context
         md_ctx = EVP_MD_CTX_new();
         if (!md_ctx) {
-            // Debug output
-            fprintf(stderr, "EVP_MD_CTX_new failed\n");
-            goto cleanup;
+            EVP_PKEY_free(pkey);
+            throw std::runtime_error("Failed to create message digest context");
         }
         
         // Initialize signing
         if (EVP_DigestSignInit(md_ctx, &ctx, nullptr, nullptr, pkey) <= 0) {
-            // Handle error silently
-            goto cleanup;
+            EVP_MD_CTX_free(md_ctx);
+            EVP_PKEY_free(pkey);
+            throw std::runtime_error("Failed to initialize signature creation");
         }
         
         // Create signature
         if (EVP_DigestSign(md_ctx, signature.data(), &sig_len, 
                           message.data(), message.size()) <= 0) {
-            // Handle error silently
-            goto cleanup;
+            EVP_MD_CTX_free(md_ctx);
+            EVP_PKEY_free(pkey);
+            throw std::runtime_error("Failed to create Ed25519 signature");
         }
         
-        // Success
         success = true;
         
     cleanup:
@@ -546,6 +464,8 @@ namespace cton {
         } else {
             throw std::runtime_error("Failed to create Ed25519 signature");
         }
+#else
+        throw std::runtime_error("OpenSSL not available - Ed25519 signature creation disabled");
 #endif
     }
 
@@ -571,21 +491,21 @@ namespace cton {
         // Create EC_KEY from private key data
         EC_KEY* ec_key = EC_KEY_new_by_curve_name(NID_secp256k1);
         if (!ec_key) {
-            return std::vector<uint8_t>(64, 0); // Return empty signature on error
+            throw std::runtime_error("Failed to create EC key for secp256k1");
         }
         
         // Create private key BIGNUM from key data
         BIGNUM* priv_bn = BN_bin2bn(privateKey.getData().data(), privateKey.getData().size(), nullptr);
         if (!priv_bn) {
             EC_KEY_free(ec_key);
-            return std::vector<uint8_t>(64, 0); // Return empty signature on error
+            throw std::runtime_error("Failed to create BIGNUM from private key data");
         }
         
         // Set private key
         if (EC_KEY_set_private_key(ec_key, priv_bn) != 1) {
             BN_free(priv_bn);
             EC_KEY_free(ec_key);
-            return std::vector<uint8_t>(64, 0); // Return empty signature on error
+            throw std::runtime_error("Failed to set private key");
         }
         
         // Generate public key from private key
@@ -595,7 +515,7 @@ namespace cton {
             BN_free(priv_bn);
             if (pub_point) EC_POINT_free(pub_point);
             EC_KEY_free(ec_key);
-            return std::vector<uint8_t>(64, 0); // Return empty signature on error
+            throw std::runtime_error("Failed to generate public key point");
         }
         
         // Set public key
@@ -603,7 +523,7 @@ namespace cton {
             BN_free(priv_bn);
             EC_POINT_free(pub_point);
             EC_KEY_free(ec_key);
-            return std::vector<uint8_t>(64, 0); // Return empty signature on error
+            throw std::runtime_error("Failed to set public key");
         }
         
         BN_free(priv_bn);
@@ -612,9 +532,8 @@ namespace cton {
         // Sign message
         ECDSA_SIG* sig = ECDSA_do_sign(message.data(), message.size(), ec_key);
         if (!sig) {
-            // Handle error silently
             EC_KEY_free(ec_key);
-            return std::vector<uint8_t>(64, 0); // Return empty signature on error
+            throw std::runtime_error("Failed to create ECDSA signature");
         }
         
         // Extract signature components
@@ -631,6 +550,8 @@ namespace cton {
         EC_KEY_free(ec_key);
         
         return signature;
+#else
+        throw std::runtime_error("OpenSSL not available - secp256k1 signature creation disabled");
 #endif
     }
     
@@ -653,30 +574,21 @@ namespace cton {
     }
     
     PrivateKey Crypto::mnemonicToPrivateKey(const std::vector<std::string>& mnemonic) {
-        // Перетворення мнемоніки в приватний ключ
         // Mnemonic to private key conversion
-        // Преобразование мнемоники в приватный ключ
     
-        // Перевіряємо валідність мнемоніки
         // Validate mnemonic
-        // Проверяем валидность мнемоники
         if (!Mnemonic::isValid(mnemonic)) {
             throw std::invalid_argument("Invalid mnemonic phrase");
         }
         
-        // Конвертуємо мнемоніку в seed
         // Convert mnemonic to seed
-        // Конвертируем мнемонику в сид
         auto seed = Mnemonic::toSeed(mnemonic);
         
-        // Використовуємо перші 32 байти seed як приватний ключ
         // Use first 32 bytes of seed as private key
-        // Используем первые 32 байта сида как приватный ключ
         if (seed.size() >= 32) {
             return PrivateKey(std::vector<uint8_t>(seed.begin(), seed.begin() + 32));
         } else {
-            // Fallback to random key generation
-            return PrivateKey::generate();
+            throw std::runtime_error("Generated seed is too short");
         }
     }
 

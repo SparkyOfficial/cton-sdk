@@ -8,6 +8,8 @@ package com.cton.api;
 import java.io.IOException;
 import java.util.Base64;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import com.cton.api.dto.AddressInformation;
 import com.cton.api.dto.BlockHeader;
@@ -25,42 +27,41 @@ import okhttp3.Response;
 import okhttp3.ResponseBody;
 
 /**
- * Клієнт для взаємодії з TON Center API
- * 
  * Client for interacting with TON Center API
- * Клиент для взаимодействия с TON Center API
  */
 public class TonApiClient {
     private final OkHttpClient httpClient;
     private final String baseUrl;
     private final String apiKey;
     private final Gson gson;
+    private final ExecutorService executorService;
     
     /**
-     * Конструктор
-     * @param baseUrl базова URL адреса API
+     * Constructor
+     * @param baseUrl base API URL
      */
     public TonApiClient(String baseUrl) {
         this(baseUrl, null);
     }
     
     /**
-     * Конструктор з API ключем
-     * @param baseUrl базова URL адреса API
-     * @param apiKey API ключ (якщо потрібен)
+     * Constructor with API key
+     * @param baseUrl base API URL
+     * @param apiKey API key (if needed)
      */
     public TonApiClient(String baseUrl, String apiKey) {
         this.httpClient = new OkHttpClient();
         this.baseUrl = baseUrl.endsWith("/") ? baseUrl : baseUrl + "/";
         this.apiKey = apiKey;
         this.gson = new Gson();
+        this.executorService = Executors.newCachedThreadPool();
     }
     
     /**
-     * Виконати HTTP запит
-     * @param request HTTP запит
-     * @return JsonObject з відповіддю
-     * @throws IOException якщо сталася помилка мережі
+     * Execute HTTP request
+     * @param request HTTP request
+     * @return JsonObject with response
+     * @throws IOException if network error occurred
      */
     private JsonObject executeRequest(Request request) throws IOException {
         try (Response response = httpClient.newCall(request).execute()) {
@@ -82,11 +83,11 @@ public class TonApiClient {
     }
     
     /**
-     * Виконати HTTP запит та десеріалізувати у вказаний тип
-     * @param request HTTP запит
-     * @param clazz клас для десеріалізації
-     * @return об'єкт вказаного типу
-     * @throws IOException якщо сталася помилка мережі
+     * Execute HTTP request and deserialize to specified type
+     * @param request HTTP request
+     * @param clazz class for deserialization
+     * @return object of specified type
+     * @throws IOException if network error occurred
      */
     private <T> T executeRequest(Request request, Class<T> clazz) throws IOException {
         try (Response response = httpClient.newCall(request).execute()) {
@@ -108,11 +109,11 @@ public class TonApiClient {
     }
     
     /**
-     * Створити запит з API ключем
-     * @param url URL запиту
-     * @param method HTTP метод
-     * @param requestBody тіло запиту (для POST запитів)
-     * @return Request об'єкт
+     * Create request with API key
+     * @param url request URL
+     * @param method HTTP method
+     * @param requestBody request body (for POST requests)
+     * @return Request object
      */
     private Request createRequest(String url, String method, RequestBody requestBody) {
         Request.Builder requestBuilder = new Request.Builder().url(url);
@@ -134,10 +135,10 @@ public class TonApiClient {
     }
     
     /**
-     * Отримати інформацію про адресу
-     * @param address адреса у форматі raw (наприклад, 0:1234...)
-     * @return інформація про адресу у форматі JSON
-     * @throws IOException якщо сталася помилка мережі
+     * Get address information
+     * @param address address in raw format (e.g., 0:1234...)
+     * @return address information in JSON format
+     * @throws IOException if network error occurred
      */
     public JsonObject getAddressInformation(String address) throws IOException {
         // формуємо URL запиту
@@ -150,10 +151,10 @@ public class TonApiClient {
     }
     
     /**
-     * Отримати інформацію про адресу у вигляді DTO
-     * @param address адреса у форматі raw (наприклад, 0:1234...)
-     * @return інформація про адресу у вигляді DTO
-     * @throws IOException якщо сталася помилка мережі
+     * Get address information as DTO
+     * @param address address in raw format (e.g., 0:1234...)
+     * @return address information as DTO
+     * @throws IOException if network error occurred
      */
     public AddressInformation getAddressInformationDto(String address) throws IOException {
         // формуємо URL запиту
@@ -166,39 +167,33 @@ public class TonApiClient {
     }
     
     /**
-     * Асинхронне отримання інформації про адресу
-     * @param address адреса у форматі raw (наприклад, 0:1234...)
-     * @return CompletableFuture з інформацією про адресу
+     * Asynchronously get address information
+     * @param address address in raw format (e.g., 0:1234...)
+     * @return CompletableFuture with address information
      */
     public CompletableFuture<JsonObject> getAddressInformationAsync(String address) {
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(getAddressInformation(address));
+                return getAddressInformation(address);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
-     * Асинхронне отримання інформації про адресу у вигляді DTO
-     * @param address адреса у форматі raw (наприклад, 0:1234...)
-     * @return CompletableFuture з інформацією про адресу у вигляді DTO
+     * Asynchronously get address information as DTO
+     * @param address address in raw format (e.g., 0:1234...)
+     * @return CompletableFuture with address information as DTO
      */
     public CompletableFuture<AddressInformation> getAddressInformationDtoAsync(String address) {
-        CompletableFuture<AddressInformation> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(getAddressInformationDto(address));
+                return getAddressInformationDto(address);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -263,16 +258,13 @@ public class TonApiClient {
      * @return CompletableFuture з результатом виконання методу
      */
     public CompletableFuture<JsonObject> runGetMethodAsync(String address, String method, JsonObject stack) {
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(runGetMethod(address, method, stack));
+                return runGetMethod(address, method, stack);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -284,16 +276,13 @@ public class TonApiClient {
      * @return CompletableFuture з результатом виконання методу
      */
     public <T> CompletableFuture<T> runGetMethodAsync(String address, String method, JsonObject stack, Class<T> resultClass) {
-        CompletableFuture<T> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(runGetMethod(address, method, stack, resultClass));
+                return runGetMethod(address, method, stack, resultClass);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -358,16 +347,13 @@ public class TonApiClient {
      * @return CompletableFuture з інформацією про блок
      */
     public CompletableFuture<JsonObject> getBlockHeaderAsync(int workchain, long shard, long seqno) {
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(getBlockHeader(workchain, shard, seqno));
+                return getBlockHeader(workchain, shard, seqno);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -378,16 +364,13 @@ public class TonApiClient {
      * @return CompletableFuture з інформацією про блок у вигляді DTO
      */
     public CompletableFuture<BlockHeader> getBlockHeaderDtoAsync(int workchain, long shard, long seqno) {
-        CompletableFuture<BlockHeader> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(getBlockHeaderDto(workchain, shard, seqno));
+                return getBlockHeaderDto(workchain, shard, seqno);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -452,16 +435,13 @@ public class TonApiClient {
      * @return CompletableFuture з транзакціями з блоку
      */
     public CompletableFuture<JsonObject> getBlockTransactionsAsync(int workchain, long shard, long seqno) {
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(getBlockTransactions(workchain, shard, seqno));
+                return getBlockTransactions(workchain, shard, seqno);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -472,16 +452,13 @@ public class TonApiClient {
      * @return CompletableFuture з транзакціями з блоку у вигляді DTO
      */
     public CompletableFuture<BlockTransactions> getBlockTransactionsDtoAsync(int workchain, long shard, long seqno) {
-        CompletableFuture<BlockTransactions> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(getBlockTransactionsDto(workchain, shard, seqno));
+                return getBlockTransactionsDto(workchain, shard, seqno);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -536,16 +513,13 @@ public class TonApiClient {
      * @return CompletableFuture з результатом операції
      */
     public CompletableFuture<JsonObject> sendBocAsync(byte[] bocBytes) {
-        CompletableFuture<JsonObject> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(sendBoc(bocBytes));
+                return sendBoc(bocBytes);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -554,16 +528,13 @@ public class TonApiClient {
      * @return CompletableFuture з результатом операції у вигляді DTO
      */
     public CompletableFuture<SendBocResult> sendBocDtoAsync(byte[] bocBytes) {
-        CompletableFuture<SendBocResult> future = new CompletableFuture<>();
-        // Execute in a separate thread
-        new Thread(() -> {
+        return CompletableFuture.supplyAsync(() -> {
             try {
-                future.complete(sendBocDto(bocBytes));
+                return sendBocDto(bocBytes);
             } catch (IOException e) {
-                future.completeExceptionally(e);
+                throw new RuntimeException(e);
             }
-        }).start();
-        return future;
+        }, executorService);
     }
     
     /**
@@ -663,5 +634,6 @@ public class TonApiClient {
     public void close() {
         httpClient.dispatcher().executorService().shutdown();
         httpClient.connectionPool().evictAll();
+        executorService.shutdown();
     }
 }
