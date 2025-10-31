@@ -43,9 +43,9 @@ jobs:
         cd vcpkg
         # Bootstrap vcpkg if not already done
         if (!(Test-Path "vcpkg.exe")) {
-          .\bootstrap-vcpkg.bat
+          cmd /c bootstrap-vcpkg.bat
         }
-        .\vcpkg install openssl:x64-windows
+        cmd /c vcpkg install openssl:x64-windows
         cd ..
         
     - name: Build C++ Core
@@ -57,14 +57,14 @@ jobs:
         
     - name: Copy DLL to resources
       run: |
-        if exist cpp\build\Release\cton-sdk-core.dll (
-          copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\
-          copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\
-        ) else (
-          echo "DLL not found, checking in build directory"
-          dir cpp\build\Release\
-          exit /b 1
-        )
+        if (Test-Path cpp\build\Release\cton-sdk-core.dll) {
+          Copy-Item cpp\build\Release\cton-sdk-core.dll java\src\main\resources\
+          Copy-Item cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\
+        } else {
+          Write-Host "DLL not found, checking in build directory"
+          Get-ChildItem cpp\build\Release\
+          exit 1
+        }
         
     - name: Build Java Components
       run: |
@@ -114,6 +114,7 @@ jobs:
     - name: Copy SO to resources
       run: |
         if [ -f cpp/build/libcton-sdk-core.so ]; then
+          mkdir -p java/src/main/resources/linux-x86-64/
           cp cpp/build/libcton-sdk-core.so java/src/main/resources/
           cp cpp/build/libcton-sdk-core.so java/src/main/resources/linux-x86-64/
         else
@@ -211,3 +212,4 @@ jobs:
         publish_branch: gh-pages
         user_name: github-actions[bot]
         user_email: github-actions[bot]@users.noreply.github.com
+        force_orphan: true

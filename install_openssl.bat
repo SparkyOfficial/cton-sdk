@@ -19,7 +19,7 @@ cd vcpkg
 REM Bootstrap vcpkg if not already done
 if not exist vcpkg.exe (
     echo Bootstrapping vcpkg...
-    call bootstrap-vcpkg.bat
+    cmd /c bootstrap-vcpkg.bat
     if %ERRORLEVEL% NEQ 0 (
         echo Failed to bootstrap vcpkg
         cd ..
@@ -29,7 +29,7 @@ if not exist vcpkg.exe (
 
 REM Install OpenSSL
 echo Installing OpenSSL...
-call vcpkg install openssl:x64-windows
+cmd /c vcpkg install openssl:x64-windows
 
 if %ERRORLEVEL% EQU 0 (
     echo OpenSSL installed successfully!
