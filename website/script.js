@@ -39,42 +39,73 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Header scroll effect
-    let lastScrollTop = 0;
-    const header = document.querySelector('header');
+    // Copy button functionality
+    const copyButtons = document.querySelectorAll('.copy-button');
     
-    window.addEventListener('scroll', function() {
-        let scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        
-        if (scrollTop > lastScrollTop && scrollTop > 100) {
-            // Scrolling down
-            header.style.transform = 'translateY(-100%)';
-        } else {
-            // Scrolling up
-            header.style.transform = 'translateY(0)';
-        }
-        
-        lastScrollTop = scrollTop;
+    copyButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const originalText = this.textContent;
+            
+            // Check if we're copying from a data attribute or a code block
+            if (this.hasAttribute('data-clipboard-text')) {
+                const textToCopy = this.getAttribute('data-clipboard-text');
+                copyToClipboard(textToCopy);
+            } else if (this.hasAttribute('data-clipboard-target')) {
+                const targetId = this.getAttribute('data-clipboard-target');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    const codeElement = targetElement.querySelector('code');
+                    if (codeElement) {
+                        copyToClipboard(codeElement.textContent);
+                    }
+                }
+            }
+            
+            // Change button text to indicate success
+            this.textContent = 'Copied!';
+            setTimeout(() => {
+                this.textContent = originalText;
+            }, 2000);
+        });
     });
 });
 
-// Simple animation for feature cards when they come into view
-document.addEventListener('DOMContentLoaded', function() {
-    const featureCards = document.querySelectorAll('.feature-card');
-    
-    const observer = new IntersectionObserver((entries) => {
-        entries.forEach(entry => {
-            if (entry.isIntersecting) {
-                entry.target.style.opacity = 1;
-                entry.target.style.transform = 'translateY(0)';
-            }
+// Function to copy text to clipboard
+function copyToClipboard(text) {
+    // Try to use the Clipboard API first
+    if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).catch(err => {
+            console.error('Failed to copy text: ', err);
+            fallbackCopyTextToClipboard(text);
         });
-    }, { threshold: 0.1 });
+    } else {
+        fallbackCopyTextToClipboard(text);
+    }
+}
+
+// Fallback method for copying text
+function fallbackCopyTextToClipboard(text) {
+    const textArea = document.createElement("textarea");
+    textArea.value = text;
     
-    featureCards.forEach(card => {
-        card.style.opacity = 0;
-        card.style.transform = 'translateY(20px)';
-        card.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
-        observer.observe(card);
-    });
-});
+    // Avoid scrolling to bottom
+    textArea.style.top = "0";
+    textArea.style.left = "0";
+    textArea.style.position = "fixed";
+    textArea.style.opacity = "0";
+    
+    document.body.appendChild(textArea);
+    textArea.focus();
+    textArea.select();
+    
+    try {
+        const successful = document.execCommand('copy');
+        if (!successful) {
+            console.error('Failed to copy text');
+        }
+    } catch (err) {
+        console.error('Failed to copy text: ', err);
+    }
+    
+    document.body.removeChild(textArea);
+}

@@ -1,9 +1,9 @@
 @echo off
-REM Comprehensive build script for CTON-SDK
+REM Build script for CTON-SDK
 REM Author: Андрій Будильников (Sparky)
 
-echo Building CTON-SDK (Complete Build)...
-echo ====================================
+echo Building CTON-SDK...
+echo ===================
 
 REM Build C++ core
 echo.
@@ -17,7 +17,7 @@ if %ERRORLEVEL% NEQ 0 (
 
 REM Copy DLL to Java resources
 echo.
-echo [2/3] Copying native libraries to Java resources...
+echo [2/3] Copying native libraries...
 copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\ >nul
 copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\ >nul
 
@@ -39,15 +39,5 @@ if %ERRORLEVEL% NEQ 0 (
 )
 
 echo.
-echo ====================================
-echo CTON-SDK build completed successfully!
-echo.
-echo Components built:
-echo  - C++ Core Library (cton-sdk-core.dll)
-echo  - Java SDK (cton-sdk-0.1.0-SNAPSHOT.jar)
-echo  - Examples and Documentation
-echo.
-echo To run examples:
-echo  cd examples
-echo  mvn compile exec:java -Dexec.mainClass="CryptoExample"
-echo.
+echo ===================
+echo Build completed successfully!

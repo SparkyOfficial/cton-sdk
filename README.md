@@ -1,172 +1,187 @@
-# CTON-SDK (C++ & Java JNA/JNI)
+# CTON-SDK - Advanced TON Blockchain SDK
 
-Advanced TON Blockchain SDK with performance, type safety, and extensibility.
+[![License](https://img.shields.io/badge/license-custom-blue.svg)](LICENSE)
+[![GitHub Stars](https://img.shields.io/github/stars/SparkyOfficial/cton-sdk?style=social)](https://github.com/SparkyOfficial/cton-sdk/stargazers)
+[![GitHub Issues](https://img.shields.io/github/issues/SparkyOfficial/cton-sdk)](https://github.com/SparkyOfficial/cton-sdk/issues)
 
-## Проект на русском / Проект українською / Project in English
+Advanced TON Blockchain SDK with performance, type safety, and extensibility. Built with C++ core and Java bindings for maximum efficiency.
 
-<!-- English version -->
-## CTON-SDK: Advanced TON Blockchain SDK
+## 🌐 Links
 
-This SDK is built on three core principles:
+- [Website](https://cton-sdk.sparky.org)
+- [Telegram](https://t.me/sparkyofc)
+- [Discord](https://discord.gg/gz8KUkWWMj)
 
-1. **Performance**: Using low-level optimizations, async I/O out of the box, and minimal memory allocations
-2. **Type Safety & Convenience**: Modern, intuitive API with Builder patterns and Fluent Interface
-3. **Extensibility**: Modular architecture for easy addition of new token standards or custom contracts
+## 📖 Table of Contents
 
-### Architecture Overview
+- [Features](#features)
+- [Modules](#modules)
+- [Installation](#installation)
+- [Examples](#examples)
+- [Building from Source](#building-from-source)
+- [Contributing](#contributing)
+- [License](#license)
 
-The SDK is divided into logically independent modules:
+## 🚀 Features
 
-1. **ton-sdk-core**: Foundation without network dependencies. Contains all cryptography and data handling.
-2. **ton-sdk-api-client**: Client for blockchain interaction.
-3. **ton-sdk-contract**: High-level abstractions for developers.
+- **High Performance**: C++ core implementation with minimal memory allocations
+- **Type Safety**: Modern Java API with Builder patterns and Fluent Interface
+- **TON Compatible**: Full support for Cells, BOC, Addresses, and all TON blockchain features
+- **Multi-language**: C++ core with Java JNA bindings
+- **Cryptography**: Ed25519, secp256k1, BIP-39 mnemonics, ChaCha20 encryption
+- **Extensible**: Modular architecture for easy addition of new token standards
 
-### Current Status
+## 📦 Modules
 
-The CTON-SDK has been significantly enhanced and is now in BETA state with:
+The SDK is organized into several modules:
 
-- Proper memory management in native interface
-- Improved cryptographic implementations with OpenSSL integration framework
-- Enhanced BOC serialization/deserialization
-- Real functionality in contract modules (Jetton, NFT, Wallet)
-- Comprehensive unit tests
-- Better error handling and resource management
-- Full BIP-39 mnemonic phrase support with PBKDF2-based key derivation
-- Additional cryptographic algorithms (secp256k1, ChaCha20)
+### Core Module (`java/`)
+The main SDK with core functionality:
+- Cryptographic operations (Ed25519, secp256k1)
+- Cell and BOC manipulation
+- Address handling
+- Mnemonic generation and key derivation
 
-### Building the Project
+### API Client (`api-client/`)
+Client for interacting with TON blockchain APIs:
+- HTTP client for TON Center API
+- Asynchronous operations support
+- Wallet operations
+- Smart contract interactions
 
-To build the complete SDK:
+### Contract Module (`contract/`)
+High-level abstractions for common contracts:
+- Wallet implementations
+- Jetton token support
+- NFT support
+- Extensible contract framework
 
-```bash
-# Windows
-build_all.bat
+## 📥 Installation
 
-# Or build components separately
-build_cpp.bat    # Build C++ core
-build_java.bat   # Build Java components
+### Maven
+
+Add the following dependency to your `pom.xml`:
+
+```xml
+<dependency>
+    <groupId>com.cton</groupId>
+    <artifactId>cton-sdk</artifactId>
+    <version>0.1.0-SNAPSHOT</version>
+</dependency>
 ```
+
+### Gradle
+
+```gradle
+implementation 'com.cton:cton-sdk:0.1.0-SNAPSHOT'
+```
+
+### Manual Installation
+
+Download the latest release from [GitHub Releases](https://github.com/SparkyOfficial/cton-sdk/releases).
+
+## 💡 Examples
+
+### Basic Crypto Operations
+
+```java
+// Generate a new private key
+PrivateKey privateKey = PrivateKey.generate();
+
+// Get the corresponding public key
+PublicKey publicKey = privateKey.getPublicKey();
+
+// Create a message to sign
+String messageStr = "Hello, TON!";
+byte[] message = messageStr.getBytes();
+
+// Sign the message
+byte[] signature = Crypto.sign(privateKey, message);
+
+// Verify the signature
+boolean isValid = Crypto.verify(publicKey, message, signature);
+System.out.println("Signature valid: " + isValid);
+```
+
+### Wallet Operations
+
+```java
+// Create a wallet
+Wallet wallet = new WalletV3(walletAddress, apiClient);
+
+// Get wallet balance
+BigInteger balance = wallet.getBalance();
+
+// Create a transfer
+Address recipient = new Address("EQA8cLh74oFKcL523Jz9Hw5ReXY6Yglz8g422w7NwzvzL03V");
+BigInteger amount = BigInteger.valueOf(1_000_000_000L); // 1 TON
+Cell transfer = wallet.createTransfer(recipient, amount, "Test transfer");
+```
+
+### Jetton Token Interaction
+
+```java
+// Create a Jetton instance
+Jetton jetton = new Jetton(jettonAddress, apiClient);
+
+// Get token information
+BigInteger totalSupply = jetton.getTotalSupply();
+Address minter = jetton.getJettonMinter();
+
+// Get user balance
+Address owner = new Address("EQA8cLh74oFKcL523Jz9Hw5ReXY6Yglz8g422w7NwzvzL03V");
+BigInteger balance = jetton.getBalance(owner);
+```
+
+More examples can be found in the [examples](examples/) directory.
+
+## 🔧 Building from Source
 
 ### Prerequisites
 
 - CMake 3.10 or higher
-- Visual Studio or compatible C++ compiler
-- JDK 8 or higher
+- Visual Studio or compatible C++ compiler (Windows)
+- GCC or Clang (Linux/macOS)
+- JDK 11 or higher
 - Maven 3.6 or higher
 - OpenSSL 3.6.0 (included in the project)
 
-### Core Features
+### Build Process
 
-#### Cell and CellBuilder
-- Complete implementation for TON cell manipulation
-- Fluent API for easy cell construction
-- Support for all TON cell operations
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/SparkyOfficial/cton-sdk.git
+   cd cton-sdk
+   ```
 
-#### Address Handling
-- Raw and user-friendly address formats
-- Workchain and hash part management
-- Validation and conversion utilities
+2. Build the complete SDK:
+   ```bash
+   # Windows
+   build_all.bat
 
-#### Cryptography
-- Ed25519 key generation and management
-- Signature creation and verification
-- Mnemonic phrase generation (BIP-39 compliant)
-- PBKDF2-based seed derivation from mnemonic phrases
-- Additional signature schemes (secp256k1)
-- ChaCha20 encryption/decryption for wallet security
-- OpenSSL integration framework
+   # Or build components separately
+   build_cpp.bat    # Build C++ core
+   build_java.bat   # Build Java components
+   ```
 
-#### BOC (Bag of Cells)
-- Serialization and deserialization
-- Index and CRC support
-- Complete TON BOC format compliance
+3. Run examples:
+   ```bash
+   cd examples
+   mvn compile exec:java -Dexec.mainClass="CryptoExample"
+   ```
 
-#### Contract Modules
-- Wallet implementations with transfer functionality
-- Jetton token support with balance operations
-- NFT support with data retrieval
-- Extensible contract framework
+## 🤝 Contributing
 
-#### API Client
-- HTTP client for TON Center API
-- Asynchronous operations support
-- Comprehensive method coverage
-- Error handling and validation
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
 
-### Examples
+## ⭐ Star History
 
-The SDK includes comprehensive examples in the `examples/` directory:
-- Basic cell manipulation
-- Address handling
-- Cryptographic operations
-- BOC serialization
-- Wallet operations
-- Jetton token interactions
-- NFT operations
-- Mnemonic phrase generation and key derivation
-- Additional cryptographic algorithms usage
+[![Star History Chart](https://api.star-history.com/svg?repos=SparkyOfficial/cton-sdk&type=Date)](https://star-history.com/#SparkyOfficial/cton-sdk&Date)
 
-<!-- Russian version -->
-## CTON-SDK: Продвинутый SDK для блокчейна TON
+## 📄 License
 
-Этот SDK построен на трех основных принципах:
+This project is licensed under a MIT license - see the [LICENSE](LICENSE) file for details.
 
-1. **Производительность**: Использование низкоуровневых оптимизаций, асинхронный ввод/вывод и минимальные аллокации памяти
-2. **Типобезопасность и удобство**: Современный, интуитивно понятный API с паттернами Builder и Fluent Interface
-3. **Расширяемость**: Модульная архитектура для легкого добавления новых стандартов токенов или пользовательских контрактов
+---
 
-### Текущий статус
-
-CTON-SDK был значительно улучшен и теперь находится в БЕТА-состоянии с:
-
-- Правильным управлением памятью в нативном интерфейсе
-- Улучшенными криптографическими реализациями с интеграцией OpenSSL
-- Улучшенной сериализацией/десериализацией BOC
-- Реальной функциональностью в модулях контрактов (Jetton, NFT, Wallet)
-- Комплексными модульными тестами
-- Лучшей обработкой ошибок и управлением ресурсами
-- Полной поддержкой мнемонических фраз BIP-39 с PBKDF2-базовой деривацией ключей
-- Дополнительными криптографическими алгоритмами (secp256k1, ChaCha20)
-
-### Сборка проекта
-
-Для сборки полного SDK:
-
-```bash
-# Windows
-build_all.bat
-
-# Или сборка компонентов по отдельности
-build_cpp.bat    # Сборка C++ ядра
-build_java.bat   # Сборка Java компонентов
-```
-
-### Предварительные требования
-
-- CMake 3.10 или выше
-- Visual Studio или совместимый компилятор C++
-- JDK 8 или выше
-- Maven 3.6 или выше
-- OpenSSL 3.6.0 (включен в проект)
-
-<!-- Ukrainian version -->
-## CTON-SDK: Передовий SDK для блокчейну TON
-
-Цей SDK побудований на трьох основних принципах:
-
-1. **Продуктивність**: Використання низькорівневих оптимізацій, асинхронний ввід/вивід та мінімальні алокації пам'яті
-2. **Типобезпечність та зручність**: Сучасний, інтуїтивно зрозумілий API з патернами Builder та Fluent Interface
-3. **Розширюваність**: Модульна архітектура для легкого додавання нових стандартів токенів або користувацьких контрактів
-
-### Поточний статус
-
-CTON-SDK було значно покращено і тепер перебуває в БЕТА-стані з:
-
-- Правильним управлінням пам'яттю в нативному інтерфейсі
-- Покращеними криптографічними реалізаціями з інтеграцією OpenSSL
-- Покращеною серіалізацією/десеріалізацією BOC
-- Реальною функціональністю в модулях контрактів (Jetton, NFT, Wallet)
-- Комплексними модульними тестами
-- Кращою обробкою помилок та управлінням ресурсами
-- Повною підтримкою мнемонічних фраз BIP-39 з PBKDF2-базовою деривацією ключів
-- Додатковими криптографічними алгоритмами (secp256k1, ChaCha20)
+**Created with ❤️ by [Sparky](https://github.com/SparkyOfficial)**

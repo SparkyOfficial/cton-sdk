@@ -62,13 +62,6 @@ jobs:
         name: cton-sdk-dll
         path: cpp/build/Release/cton-sdk-core.dll
         
-    - name: Upload Windows Executables
-      uses: actions/upload-artifact@v3
-      with:
-        name: cton-sdk-exe
-        path: |
-          cpp/build/Release/*.exe
-          
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -119,57 +112,8 @@ jobs:
         name: cton-sdk-so
         path: cpp/build/libcton-sdk-core.so
         
-  build-macos:
-    runs-on: macos-latest
-    steps:
-    - uses: actions/checkout@v3
-    
-    - name: Set up JDK 11
-      uses: actions/setup-java@v3
-      with:
-        java-version: '11'
-        distribution: 'temurin'
-        
-    - name: Install Dependencies
-      run: |
-        brew install cmake openssl
-        
-    - name: Build C++ Core
-      run: |
-        mkdir cpp/build
-        cd cpp/build
-        cmake ..
-        cmake --build . --config Release
-        
-    - name: Copy DYLIB to resources
-      run: |
-        cp cpp/build/libcton-sdk-core.dylib java/src/main/resources/
-        cp cpp/build/libcton-sdk-core.dylib java/src/main/resources/darwin-x86-64/
-        
-    - name: Build Java Components
-      run: |
-        cd java
-        mvn clean install
-        
-    - name: Run Tests
-      run: |
-        cd java
-        mvn test
-        
-    - name: Upload JAR Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: cton-sdk-jar-macos
-        path: java/target/cton-sdk-*.jar
-        
-    - name: Upload DYLIB Artifact
-      uses: actions/upload-artifact@v3
-      with:
-        name: cton-sdk-dylib
-        path: cpp/build/libcton-sdk-core.dylib
-        
   publish-release:
-    needs: [build-windows, build-linux, build-macos]
+    needs: [build-windows, build-linux]
     runs-on: ubuntu-latest
     if: github.event_name == 'release'
     steps:
@@ -197,25 +141,12 @@ jobs:
         name: cton-sdk-so
         path: artifacts/linux
         
-    - name: Download macOS Artifacts
-      uses: actions/download-artifact@v3
-      with:
-        name: cton-sdk-jar-macos
-        path: artifacts/macos
-        
-    - name: Download DYLIB Artifact
-      uses: actions/download-artifact@v3
-      with:
-        name: cton-sdk-dylib
-        path: artifacts/macos
-        
     - name: Create Release Assets
       run: |
         cd artifacts
         # Create platform-specific packages
         zip -r cton-sdk-windows.zip windows/
         tar -czf cton-sdk-linux.tar.gz linux/
-        tar -czf cton-sdk-macos.tar.gz macos/
         
     - name: Upload Release Assets
       uses: softprops/action-gh-release@v1
@@ -223,6 +154,18 @@ jobs:
         files: |
           artifacts/cton-sdk-windows.zip
           artifacts/cton-sdk-linux.tar.gz
-          artifacts/cton-sdk-macos.tar.gz
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        
+  deploy-website:
+    needs: [build-windows, build-linux]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: ./website
+        publish_branch: gh-pages
