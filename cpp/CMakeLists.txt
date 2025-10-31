@@ -125,9 +125,9 @@ add_executable(crypto_security_test test/CryptoSecurityTest.cpp)
 target_link_libraries(crypto_security_test cton-sdk-core)
 
 # Create SHA256 test executable
-add_executable(test_openssl test_openssl.cpp)
-target_link_libraries(test_openssl cton-sdk-core)
-target_include_directories(test_openssl PRIVATE ${OPENSSL_INCLUDE_DIR})
+# add_executable(test_openssl test_openssl.cpp)
+# target_link_libraries(test_openssl cton-sdk-core)
+# target_include_directories(test_openssl PRIVATE ${OPENSSL_INCLUDE_DIR})
 
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 

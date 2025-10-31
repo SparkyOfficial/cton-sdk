@@ -11,9 +11,11 @@
 #include <algorithm>
 
 // Include OpenSSL
+#if defined(OPENSSL_AVAILABLE) && OPENSSL_AVAILABLE
 #include "../../openssl-3.6.0/include/openssl/sha.h"
 #include "../../openssl-3.6.0/include/openssl/evp.h"
 #include "../../openssl-3.6.0/include/openssl/kdf.h"
+#endif
 
 namespace cton {
     
@@ -483,6 +485,7 @@ namespace cton {
         // Calculate SHA256 checksum
         // Вычисление контрольной суммы SHA256
         
+#if OPENSSL_AVAILABLE
         std::vector<uint8_t> hash(32);
         
         // Use OpenSSL implementation
@@ -495,6 +498,9 @@ namespace cton {
         int checksumBytes = (checksumBits + 7) / 8;
         
         return std::vector<uint8_t>(hash.begin(), hash.begin() + checksumBytes);
+#else
+        throw std::runtime_error("OpenSSL not available - SHA256 checksum calculation disabled");
+#endif
     }
     
 }

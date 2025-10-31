@@ -29,7 +29,7 @@ if not exist vcpkg.exe (
 REM Check if OpenSSL is installed
 if not exist installed\x64-windows\lib\ (
     echo Installing OpenSSL via vcpkg...
-    vcpkg install openssl:x64-windows
+    call vcpkg install openssl:x64-windows
     if %ERRORLEVEL% NEQ 0 (
         echo Failed to install OpenSSL
         cd ..

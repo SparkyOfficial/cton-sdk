@@ -41,7 +41,10 @@ jobs:
           git clone https://github.com/Microsoft/vcpkg.git
         }
         cd vcpkg
-        .\bootstrap-vcpkg.bat
+        # Bootstrap vcpkg if not already done
+        if (!(Test-Path "vcpkg.exe")) {
+          .\bootstrap-vcpkg.bat
+        }
         .\vcpkg install openssl:x64-windows
         cd ..
         
@@ -49,7 +52,7 @@ jobs:
       run: |
         mkdir cpp\build
         cd cpp\build
-        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DOPENSSL_ROOT_DIR=../../vcpkg/installed/x64-windows
         cmake --build . --config Release
         
     - name: Copy DLL to resources
@@ -206,3 +209,5 @@ jobs:
         github_token: ${{ secrets.GITHUB_TOKEN }}
         publish_dir: ./website
         publish_branch: gh-pages
+        user_name: github-actions[bot]
+        user_email: github-actions[bot]@users.noreply.github.com

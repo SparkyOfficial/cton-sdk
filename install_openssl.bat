@@ -29,7 +29,7 @@ if not exist vcpkg.exe (
 
 REM Install OpenSSL
 echo Installing OpenSSL...
-vcpkg install openssl:x64-windows
+call vcpkg install openssl:x64-windows
 
 if %ERRORLEVEL% EQU 0 (
     echo OpenSSL installed successfully!
