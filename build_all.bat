@@ -18,14 +18,18 @@ if %ERRORLEVEL% NEQ 0 (
 REM Copy DLL to Java resources
 echo.
 echo [2/3] Copying native libraries...
-copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\ >nul
-copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\ >nul
-
-if %ERRORLEVEL% EQU 0 (
-    echo Native libraries copied successfully!
+if exist cpp\build\Release\cton-sdk-core.dll (
+    copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\ >nul
+    copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\ >nul
+    if %ERRORLEVEL% EQU 0 (
+        echo Native libraries copied successfully!
+    ) else (
+        echo Failed to copy native libraries!
+        exit /b %ERRORLEVEL%
+    )
 ) else (
-    echo Failed to copy native libraries!
-    exit /b %ERRORLEVEL%
+    echo cton-sdk-core.dll not found! Build may have failed.
+    exit /b 1
 )
 
 REM Build Java components

@@ -138,9 +138,8 @@ target_include_directories(cton-sdk-core PUBLIC ${OPENSSL_INCLUDE_DIR})
 
 # Try to find precompiled OpenSSL libraries in common locations
 set(OPENSSL_LIB_PATHS
-    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/install/lib64"
-    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/lib64"
     "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/lib64"
     "${CMAKE_CURRENT_SOURCE_DIR}/../openssl-3.6.0/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/installed/x64-windows/lib"
     "${CMAKE_CURRENT_SOURCE_DIR}/../vcpkg/installed/x64-windows/lib/manual-link"
@@ -185,17 +184,31 @@ foreach(LIB_PATH ${OPENSSL_LIB_PATHS})
     endif()
 endforeach()
 
-# Require OpenSSL
-find_package(OpenSSL REQUIRED)
-target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
-message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
-
-# Also set for test executables
-target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
-target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
-target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
-target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
+# If we couldn't find the libraries above, try to find them directly
+if(NOT TARGET OpenSSL::Crypto)
+    # Look for the DLL files directly in the OpenSSL directory
+    file(GLOB OPENSSL_CRYPTO_LIBS "${OPENSSL_ROOT_DIR}/libcrypto*.lib")
+    file(GLOB OPENSSL_SSL_LIBS "${OPENSSL_ROOT_DIR}/libssl*.lib")
+    
+    if(OPENSSL_CRYPTO_LIBS AND OPENSSL_SSL_LIBS)
+        list(GET OPENSSL_CRYPTO_LIBS 0 OPENSSL_CRYPTO_LIB)
+        list(GET OPENSSL_SSL_LIBS 0 OPENSSL_SSL_LIB)
+        
+        target_link_libraries(cton-sdk-core PRIVATE 
+            ${OPENSSL_CRYPTO_LIB}
+            ${OPENSSL_SSL_LIB})
+        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+        message(STATUS "Using OpenSSL libraries: ${OPENSSL_CRYPTO_LIB}, ${OPENSSL_SSL_LIB}")
+        
+        # Also set for test executables
+        target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
+    else()
+        message(WARNING "OpenSSL libraries not found, building without OpenSSL support")
+    endif()
+endif()
 
 target_include_directories(cton-sdk-test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
