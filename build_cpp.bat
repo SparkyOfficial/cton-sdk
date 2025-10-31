@@ -47,7 +47,7 @@ if not exist cpp\build mkdir cpp\build
 
 REM Build C++ core
 cd cpp\build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DOPENSSL_ROOT_DIR=../../vcpkg/installed/x64-windows
+cmake .. -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake
 cmake --build . --config Release
 
 REM Check if build was successful
