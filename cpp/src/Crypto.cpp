@@ -482,6 +482,8 @@ namespace cton {
         // Попробуем использовать OpenSSL для проверки подписи Ed25519
         
         return publicKey.verifySignature(message, signature);
+#else
+        throw std::runtime_error("OpenSSL not available - Ed25519 signature verification disabled");
 #endif
     }
     

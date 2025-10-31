@@ -124,6 +124,10 @@ target_link_libraries(chacha20_java_mimic_exact_test cton-sdk-core)
 add_executable(crypto_security_test test/CryptoSecurityTest.cpp)
 target_link_libraries(crypto_security_test cton-sdk-core)
 
+# Create SHA256 test executable
+add_executable(sha256_test sha256_test.cpp)
+target_link_libraries(sha256_test cton-sdk-core)
+
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -190,6 +194,10 @@ if(NOT TARGET OpenSSL::Crypto)
     file(GLOB OPENSSL_CRYPTO_LIBS "${OPENSSL_ROOT_DIR}/libcrypto*.lib")
     file(GLOB OPENSSL_SSL_LIBS "${OPENSSL_ROOT_DIR}/libssl*.lib")
     
+    # Also look for .a files (Linux/macOS)
+    file(GLOB OPENSSL_CRYPTO_LIBS_A "${OPENSSL_ROOT_DIR}/libcrypto*.a")
+    file(GLOB OPENSSL_SSL_LIBS_A "${OPENSSL_ROOT_DIR}/libssl*.a")
+    
     if(OPENSSL_CRYPTO_LIBS AND OPENSSL_SSL_LIBS)
         list(GET OPENSSL_CRYPTO_LIBS 0 OPENSSL_CRYPTO_LIB)
         list(GET OPENSSL_SSL_LIBS 0 OPENSSL_SSL_LIB)
@@ -205,8 +213,37 @@ if(NOT TARGET OpenSSL::Crypto)
         target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
         target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
         target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
+    elseif(OPENSSL_CRYPTO_LIBS_A AND OPENSSL_SSL_LIBS_A)
+        list(GET OPENSSL_CRYPTO_LIBS_A 0 OPENSSL_CRYPTO_LIB)
+        list(GET OPENSSL_SSL_LIBS_A 0 OPENSSL_SSL_LIB)
+        
+        target_link_libraries(cton-sdk-core PRIVATE 
+            ${OPENSSL_CRYPTO_LIB}
+            ${OPENSSL_SSL_LIB})
+        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+        message(STATUS "Using OpenSSL libraries: ${OPENSSL_CRYPTO_LIB}, ${OPENSSL_SSL_LIB}")
+        
+        # Also set for test executables
+        target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+        target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
     else()
-        message(WARNING "OpenSSL libraries not found, building without OpenSSL support")
+        # Try to find system OpenSSL
+        find_package(OpenSSL)
+        if(OpenSSL_FOUND)
+            target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+            target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+            message(STATUS "Using system OpenSSL libraries")
+            
+            # Also set for test executables
+            target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+            target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+            target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+            target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
+        else()
+            message(WARNING "OpenSSL libraries not found, building without OpenSSL support")
+        endif()
     endif()
 endif()
 
