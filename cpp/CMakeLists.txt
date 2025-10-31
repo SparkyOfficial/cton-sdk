@@ -120,6 +120,10 @@ target_link_libraries(chacha20_java_mimic_test cton-sdk-core)
 add_executable(chacha20_java_mimic_exact_test chacha20_java_mimic_exact_test.cpp)
 target_link_libraries(chacha20_java_mimic_exact_test cton-sdk-core)
 
+# Create crypto security test executable
+add_executable(crypto_security_test test/CryptoSecurityTest.cpp)
+target_link_libraries(crypto_security_test cton-sdk-core)
+
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -181,22 +185,17 @@ foreach(LIB_PATH ${OPENSSL_LIB_PATHS})
     endif()
 endforeach()
 
-# If no precompiled libraries found, try to find them with find_package
-if(NOT TARGET OpenSSL::Crypto)
-    find_package(OpenSSL QUIET)
-    if(OPENSSL_FOUND)
-        target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-        target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE)
-        message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
-    else()
-        message(WARNING "OpenSSL libraries not found, crypto functionality will be limited")
-    endif()
-endif()
+# Require OpenSSL
+find_package(OpenSSL REQUIRED)
+target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+message(STATUS "OpenSSL found: ${OPENSSL_VERSION}")
 
-# If we still don't have OpenSSL, try to build it or use a fallback
-if(NOT TARGET OpenSSL::Crypto)
-    message(STATUS "Using basic random number generation as fallback for crypto")
-endif()
+# Also set for test executables
+target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
 
 target_include_directories(cton-sdk-test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
@@ -286,3 +285,6 @@ target_compile_options(cton-sdk-core PRIVATE
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4100 /wd4996 /wd4267>  # Disable various warnings
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
 )
+
+# Copy test runner script to build directory
+configure_file(test/run_all_tests.bat run_all_tests.bat COPYONLY)

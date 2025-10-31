@@ -1,24 +1,25 @@
-// LiteClient.java - клієнт для прямого з'єднання з LiteServer
+// LiteClient.java - інтерфейс для роботи з проксі-сервером TON
 // Author: Андрій Будильников (Sparky)
-// Client for direct connection to LiteServer
-// Клиент для прямого соединения с LiteServer
+// Interface for working with TON proxy server
+// Интерфейс для работы с прокси-сервером TON
 
 package com.cton.api.liteclient;
 
-import com.google.gson.JsonObject;
 import java.io.IOException;
 import java.util.concurrent.CompletableFuture;
 
+import com.google.gson.JsonObject;
+
 /**
- * Інтерфейс для роботи з TON LiteServer
+ * Інтерфейс для роботи з проксі-сервером TON
  * 
- * Interface for working with TON LiteServer
- * Интерфейс для работы с TON LiteServer
+ * Interface for working with TON proxy server
+ * Интерфейс для работы с прокси-сервером TON
  */
 public interface LiteClient {
     
     /**
-     * Підключитися до LiteServer
+     * Підключитися до проксі-сервера
      * @param host хост сервера
      * @param port порт сервера
      * @param publicKeyBase64 публічний ключ сервера в Base64
@@ -27,12 +28,12 @@ public interface LiteClient {
     void connect(String host, int port, String publicKeyBase64) throws IOException;
     
     /**
-     * Відключитися від LiteServer
+     * Відключитися від проксі-сервера
      */
     void disconnect();
     
     /**
-     * Перевірити чи підключено до сервера
+     * Перевірити чи підключено до проксі-сервера
      * @return true якщо підключено
      */
     boolean isConnected();

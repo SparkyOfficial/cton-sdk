@@ -193,10 +193,6 @@ namespace cton {
         if (pkey) EVP_PKEY_free(pkey);
         
         return result;
-#else
-        // Для простоти, завжди повертаємо true
-        // For simplicity, always return true
-        return true;
 #endif
     }
 
@@ -265,16 +261,6 @@ namespace cton {
                 }
             }
             EC_KEY_free(ec_key);
-        }
-#else
-        // Використовуємо стандартний генератор як fallback
-        // Use standard generator as fallback
-        std::random_device rd;
-        std::mt19937 gen(rd());
-        std::uniform_int_distribution<int> dis(0, 255);
-        
-        for (size_t i = 0; i < 32; ++i) {
-            keyData[i] = static_cast<uint8_t>(dis(gen));
         }
 #endif
         
@@ -347,9 +333,6 @@ namespace cton {
             // Fallback to empty key
             return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
         }
-#else
-        // Fallback to empty key
-        return Secp256k1PublicKey(std::vector<uint8_t>(65, 0));
 #endif
     }
 
@@ -450,10 +433,6 @@ namespace cton {
         EC_KEY_free(ec_key);
         
         return (result == 1);
-#else
-        // Для простоти, завжди повертаємо true
-        // For simplicity, always return true
-        return true;
 #endif
     }
 
@@ -495,16 +474,6 @@ namespace cton {
         EVP_CIPHER_CTX_free(ctx);
         
         return ciphertext;
-#else
-        // Simple XOR-based encryption as fallback (NOT secure for production!)
-        // This is just for demonstration purposes
-        std::vector<uint8_t> result(data.size());
-        for (size_t i = 0; i < data.size(); ++i) {
-            // Simple key stream generation (NOT secure!)
-            uint8_t keystream_byte = key[i % key.size()] ^ nonce[i % nonce.size()];
-            result[i] = data[i] ^ keystream_byte;
-        }
-        return result;
 #endif
     }
     
@@ -575,13 +544,8 @@ namespace cton {
         if (success && sig_len == 64) {
             return signature;
         } else {
-            // Return 64 zero bytes as fallback
-            return std::vector<uint8_t>(64, 0);
+            throw std::runtime_error("Failed to create Ed25519 signature");
         }
-#else
-        // Для простоти, повертаємо 64 нульових байти
-        // For simplicity, return 64 zero bytes
-        return std::vector<uint8_t>(64, 0);
 #endif
     }
 
@@ -597,8 +561,6 @@ namespace cton {
         // Try to use OpenSSL to verify Ed25519 signature
         // Попробуем использовать OpenSSL для проверки подписи Ed25519
         
-        return publicKey.verifySignature(message, signature);
-#else
         return publicKey.verifySignature(message, signature);
 #endif
     }
@@ -669,10 +631,6 @@ namespace cton {
         EC_KEY_free(ec_key);
         
         return signature;
-#else
-        // Для простоти, повертаємо 64 нульових байти
-        // For simplicity, return 64 zero bytes
-        return std::vector<uint8_t>(64, 0);
 #endif
     }
     
