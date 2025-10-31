@@ -34,11 +34,22 @@ jobs:
       with:
         cmake-version: '3.22.x'
         
+    - name: Install OpenSSL via vcpkg
+      run: |
+        # Check if vcpkg directory exists
+        if (!(Test-Path "vcpkg")) {
+          git clone https://github.com/Microsoft/vcpkg.git
+        }
+        cd vcpkg
+        .\bootstrap-vcpkg.bat
+        .\vcpkg install openssl:x64-windows
+        cd ..
+        
     - name: Build C++ Core
       run: |
         mkdir cpp\build
         cd cpp\build
-        cmake .. -G "Visual Studio 17 2022" -A x64
+        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake
         cmake --build . --config Release
         
     - name: Copy DLL to resources
