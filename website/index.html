@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CTON-SDK - Advanced TON Blockchain SDK</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="logo">
+                <span class="logo-text">CTON</span>
+                <span class="logo-subtext">SDK</span>
+            </div>
+            <nav>
+                <ul>
+                    <li><a href="#features">Features</a></li>
+                    <li><a href="#examples">Examples</a></li>
+                    <li><a href="#documentation">Documentation</a></li>
+                    <li><a href="#download">Download</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h1>Advanced TON Blockchain SDK</h1>
+                <p class="subtitle">High-performance, type-safe, and extensible SDK for TON blockchain development with C++ core and Java bindings</p>
+                <div class="cta-buttons">
+                    <a href="#download" class="btn primary">Get Started</a>
+                    <a href="https://github.com/cton-sdk/cton-sdk" class="btn secondary">View on GitHub</a>
+                </div>
+            </div>
+        </section>
+
+        <section id="features" class="features">
+            <div class="container">
+                <h2>Core Features</h2>
+                <div class="feature-grid">
+                    <div class="feature-card">
+                        <h3>Performance</h3>
+                        <p>Low-level optimizations, async I/O, and minimal memory allocations with C++ core implementation</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Type Safety</h3>
+                        <p>Modern, intuitive API with Builder patterns and Fluent Interface for Java developers</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Extensibility</h3>
+                        <p>Modular architecture for easy addition of new token standards or custom contracts</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Cryptography</h3>
+                        <p>Ed25519, secp256k1, BIP-39 mnemonics, and ChaCha20 encryption with OpenSSL integration</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>TON Compatibility</h3>
+                        <p>Full support for Cells, BOC, Addresses, and all TON blockchain features</p>
+                    </div>
+                    <div class="feature-card">
+                        <h3>Multi-language</h3>
+                        <p>C++ core with Java JNA bindings for maximum performance and ease of use</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="examples" class="examples">
+            <div class="container">
+                <h2>Code Examples</h2>
+                <div class="example-tabs">
+                    <button class="tab-button active" data-tab="crypto">Crypto</button>
+                    <button class="tab-button" data-tab="wallet">Wallet</button>
+                    <button class="tab-button" data-tab="jetton">Jetton</button>
+                    <button class="tab-button" data-tab="nft">NFT</button>
+                </div>
+                <div class="tab-content">
+                    <div id="crypto" class="tab-pane active">
+                        <pre><code class="language-java">// Generate a new private key
+PrivateKey privateKey = PrivateKey.generate();
+
+// Get the corresponding public key
+PublicKey publicKey = privateKey.getPublicKey();
+
+// Create a message to sign
+String messageStr = "Hello, TON!";
+byte[] message = messageStr.getBytes();
+
+// Sign the message
+byte[] signature = Crypto.sign(privateKey, message);
+
+// Verify the signature
+boolean isValid = Crypto.verify(publicKey, message, signature);
+System.out.println("Signature valid: " + isValid);</code></pre>
+                    </div>
+                    <div id="wallet" class="tab-pane">
+                        <pre><code class="language-java">// Create a wallet
+Wallet wallet = new WalletV3(walletAddress, apiClient);
+
+// Get wallet balance
+BigInteger balance = wallet.getBalance();
+
+// Create a transfer
+Address recipient = new Address("EQA8cLh74oFKcL523Jz9Hw5ReXY6Yglz8g422w7NwzvzL03V");
+BigInteger amount = BigInteger.valueOf(1_000_000_000L); // 1 TON
+Cell transfer = wallet.createTransfer(recipient, amount, "Test transfer");</code></pre>
+                    </div>
+                    <div id="jetton" class="tab-pane">
+                        <pre><code class="language-java">// Create a Jetton instance
+Jetton jetton = new Jetton(jettonAddress, apiClient);
+
+// Get token information
+BigInteger totalSupply = jetton.getTotalSupply();
+Address minter = jetton.getJettonMinter();
+
+// Get user balance
+Address owner = new Address("EQA8cLh74oFKcL523Jz9Hw5ReXY6Yglz8g422w7NwzvzL03V");
+BigInteger balance = jetton.getBalance(owner);</code></pre>
+                    </div>
+                    <div id="nft" class="tab-pane">
+                        <pre><code class="language-java">// Create an NFT instance
+Nft nft = new Nft(nftAddress, apiClient);
+
+// Get NFT information
+long index = nft.getIndex();
+Address collection = nft.getCollection();
+Address owner = nft.getOwner();</code></pre>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="documentation" class="documentation">
+            <div class="container">
+                <h2>Documentation</h2>
+                <div class="docs-grid">
+                    <div class="doc-card">
+                        <h3>API Reference</h3>
+                        <p>Complete documentation for all classes and methods in the SDK</p>
+                        <a href="#" class="doc-link">View API Docs</a>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Getting Started</h3>
+                        <p>Quick start guide to integrate CTON-SDK into your project</p>
+                        <a href="#" class="doc-link">View Guide</a>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Examples</h3>
+                        <p>Comprehensive examples for all SDK features</p>
+                        <a href="#" class="doc-link">View Examples</a>
+                    </div>
+                    <div class="doc-card">
+                        <h3>Architecture</h3>
+                        <p>Deep dive into the SDK architecture and design principles</p>
+                        <a href="#" class="doc-link">View Architecture</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="download" class="download">
+            <div class="container">
+                <h2>Download</h2>
+                <p class="download-description">Get the latest version of CTON-SDK for your platform</p>
+                <div class="download-options">
+                    <div class="download-card">
+                        <h3>Java SDK</h3>
+                        <p>Maven dependency for Java projects</p>
+                        <pre><code class="language-xml">&lt;dependency&gt;
+    &lt;groupId&gt;com.cton&lt;/groupId&gt;
+    &lt;artifactId&gt;cton-sdk&lt;/artifactId&gt;
+    &lt;version&gt;0.1.0-SNAPSHOT&lt;/version&gt;
+&lt;/dependency&gt;</code></pre>
+                        <a href="#" class="btn download-btn">Download JAR</a>
+                    </div>
+                    <div class="download-card">
+                        <h3>Native Library</h3>
+                        <p>C++ core library with JNA bindings</p>
+                        <ul>
+                            <li>Windows: cton-sdk-core.dll</li>
+                            <li>Linux: libcton-sdk-core.so</li>
+                            <li>macOS: libcton-sdk-core.dylib</li>
+                        </ul>
+                        <a href="#" class="btn download-btn">Download DLL</a>
+                    </div>
+                    <div class="download-card">
+                        <h3>Source Code</h3>
+                        <p>Complete source code with examples</p>
+                        <pre><code class="language-bash">git clone https://github.com/cton-sdk/cton-sdk.git</code></pre>
+                        <a href="https://github.com/cton-sdk/cton-sdk" class="btn download-btn">Clone Repository</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-logo">
+                    <span class="logo-text">CTON</span>
+                    <span class="logo-subtext">SDK</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/cton-sdk/cton-sdk">GitHub</a>
+                    <a href="#">Documentation</a>
+                    <a href="#">License</a>
+                </div>
+                <div class="footer-info">
+                    <p>&copy; 2025 CTON-SDK. All rights reserved.</p>
+                    <p>Created by Sparky (Andriy Budilnikov)</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

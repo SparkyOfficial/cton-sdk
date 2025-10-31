@@ -1,0 +1,228 @@
+name: Build and Publish cton-sdk
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ created ]
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Setup MSVC
+      uses: ilammy/msvc-dev-cmd@v1
+      
+    - name: Setup CMake
+      uses: jwlawson/actions-setup-cmake@v1.14
+      with:
+        cmake-version: '3.22.x'
+        
+    - name: Build C++ Core
+      run: |
+        mkdir cpp\build
+        cd cpp\build
+        cmake .. -G "Visual Studio 17 2022" -A x64
+        cmake --build . --config Release
+        
+    - name: Copy DLL to resources
+      run: |
+        copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\
+        copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\
+        
+    - name: Build Java Components
+      run: |
+        cd java
+        mvn clean install
+        
+    - name: Run Tests
+      run: |
+        cd java
+        mvn test
+        
+    - name: Upload JAR Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-jar
+        path: java/target/cton-sdk-*.jar
+        
+    - name: Upload DLL Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-dll
+        path: cpp/build/Release/cton-sdk-core.dll
+        
+    - name: Upload Windows Executables
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-exe
+        path: |
+          cpp/build/Release/*.exe
+          
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Install Dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y cmake build-essential libssl-dev
+        
+    - name: Build C++ Core
+      run: |
+        mkdir cpp/build
+        cd cpp/build
+        cmake ..
+        cmake --build . --config Release
+        
+    - name: Copy SO to resources
+      run: |
+        cp cpp/build/libcton-sdk-core.so java/src/main/resources/
+        cp cpp/build/libcton-sdk-core.so java/src/main/resources/linux-x86-64/
+        
+    - name: Build Java Components
+      run: |
+        cd java
+        mvn clean install
+        
+    - name: Run Tests
+      run: |
+        cd java
+        mvn test
+        
+    - name: Upload JAR Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-jar-linux
+        path: java/target/cton-sdk-*.jar
+        
+    - name: Upload SO Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-so
+        path: cpp/build/libcton-sdk-core.so
+        
+  build-macos:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up JDK 11
+      uses: actions/setup-java@v3
+      with:
+        java-version: '11'
+        distribution: 'temurin'
+        
+    - name: Install Dependencies
+      run: |
+        brew install cmake openssl
+        
+    - name: Build C++ Core
+      run: |
+        mkdir cpp/build
+        cd cpp/build
+        cmake ..
+        cmake --build . --config Release
+        
+    - name: Copy DYLIB to resources
+      run: |
+        cp cpp/build/libcton-sdk-core.dylib java/src/main/resources/
+        cp cpp/build/libcton-sdk-core.dylib java/src/main/resources/darwin-x86-64/
+        
+    - name: Build Java Components
+      run: |
+        cd java
+        mvn clean install
+        
+    - name: Run Tests
+      run: |
+        cd java
+        mvn test
+        
+    - name: Upload JAR Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-jar-macos
+        path: java/target/cton-sdk-*.jar
+        
+    - name: Upload DYLIB Artifact
+      uses: actions/upload-artifact@v3
+      with:
+        name: cton-sdk-dylib
+        path: cpp/build/libcton-sdk-core.dylib
+        
+  publish-release:
+    needs: [build-windows, build-linux, build-macos]
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+    - name: Download Windows Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: cton-sdk-jar
+        path: artifacts/windows
+        
+    - name: Download DLL Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: cton-sdk-dll
+        path: artifacts/windows
+        
+    - name: Download Linux Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: cton-sdk-jar-linux
+        path: artifacts/linux
+        
+    - name: Download SO Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: cton-sdk-so
+        path: artifacts/linux
+        
+    - name: Download macOS Artifacts
+      uses: actions/download-artifact@v3
+      with:
+        name: cton-sdk-jar-macos
+        path: artifacts/macos
+        
+    - name: Download DYLIB Artifact
+      uses: actions/download-artifact@v3
+      with:
+        name: cton-sdk-dylib
+        path: artifacts/macos
+        
+    - name: Create Release Assets
+      run: |
+        cd artifacts
+        # Create platform-specific packages
+        zip -r cton-sdk-windows.zip windows/
+        tar -czf cton-sdk-linux.tar.gz linux/
+        tar -czf cton-sdk-macos.tar.gz macos/
+        
+    - name: Upload Release Assets
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          artifacts/cton-sdk-windows.zip
+          artifacts/cton-sdk-linux.tar.gz
+          artifacts/cton-sdk-macos.tar.gz
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

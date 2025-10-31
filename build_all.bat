@@ -1,55 +1,53 @@
 @echo off
-REM Build script for entire CTON-SDK project
+REM Comprehensive build script for CTON-SDK
 REM Author: Андрій Будильников (Sparky)
 
-echo Building CTON-SDK Project...
-echo ===========================
+echo Building CTON-SDK (Complete Build)...
+echo ====================================
 
-set FAILED=0
-
+REM Build C++ core
 echo.
-echo Building C++ Core...
-echo ------------------
+echo [1/3] Building C++ Core...
 call build_cpp.bat
-if %ERRORLEVEL% NEQ 0 set FAILED=1
 
-if %FAILED% EQU 1 (
-    echo.
-    echo C++ Core build failed! Skipping Java builds.
-    exit /b 1
+if %ERRORLEVEL% NEQ 0 (
+    echo C++ build failed!
+    exit /b %ERRORLEVEL%
 )
 
+REM Copy DLL to Java resources
 echo.
-echo Building Core SDK...
-echo ------------------
-cd java
-mvn clean install
-if %ERRORLEVEL% NEQ 0 set FAILED=1
-cd ..
+echo [2/3] Copying native libraries to Java resources...
+copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\ >nul
+copy cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\ >nul
 
-if %FAILED% EQU 1 (
-    echo.
-    echo Core SDK build failed! Skipping API client build.
-    exit /b 1
-)
-
-echo.
-echo Building API Client...
-echo --------------------
-cd api-client
-mvn clean install
-if %ERRORLEVEL% NEQ 0 set FAILED=1
-cd ..
-
-if %FAILED% EQU 0 (
-    echo.
-    echo ALL COMPONENTS BUILT SUCCESSFULLY!
-    echo =================================
-    echo C++ Core: Built
-    echo Core SDK: Built
-    echo API Client: Built
+if %ERRORLEVEL% EQU 0 (
+    echo Native libraries copied successfully!
 ) else (
-    echo.
-    echo SOME COMPONENTS FAILED TO BUILD!
-    exit /b 1
+    echo Failed to copy native libraries!
+    exit /b %ERRORLEVEL%
 )
+
+REM Build Java components
+echo.
+echo [3/3] Building Java Components...
+call build_java.bat
+
+if %ERRORLEVEL% NEQ 0 (
+    echo Java build failed!
+    exit /b %ERRORLEVEL%
+)
+
+echo.
+echo ====================================
+echo CTON-SDK build completed successfully!
+echo.
+echo Components built:
+echo  - C++ Core Library (cton-sdk-core.dll)
+echo  - Java SDK (cton-sdk-0.1.0-SNAPSHOT.jar)
+echo  - Examples and Documentation
+echo.
+echo To run examples:
+echo  cd examples
+echo  mvn compile exec:java -Dexec.mainClass="CryptoExample"
+echo.

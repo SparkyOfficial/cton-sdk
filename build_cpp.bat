@@ -1,30 +1,25 @@
 @echo off
-REM Build C++ components
-REM Скрипт збирання C++ компонентів
-REM Скрипт сборки C++ компонентов
+REM Build script for CTON-SDK C++ Core
+REM Author: Андрій Будильников (Sparky)
 
 echo Building CTON-SDK C++ Core...
-echo =============================
 
 REM Create build directory
-if not exist "cpp\build" mkdir "cpp\build"
+if not exist cpp\build mkdir cpp\build
 
-REM Change to build directory
+REM Build C++ core
 cd cpp\build
-
-REM Configure with CMake
-echo Configuring with CMake...
-cmake .. -G "Visual Studio 17 2022" -A x64
-
-REM Build the project
-echo Building the project...
+cmake ..
 cmake --build . --config Release
 
-REM Copy DLL to Java resources
-echo Copying DLL to Java resources...
-copy Release\cton-sdk-core.dll ..\..\java\src\main\resources\
-copy Release\cton-sdk-core.dll ..\..\java\src\main\resources\win32-x86-64\
+REM Check if build was successful
+if %ERRORLEVEL% EQU 0 (
+    echo C++ core built successfully!
+) else (
+    echo C++ core build failed!
+    exit /b %ERRORLEVEL%
+)
 
-echo.
-echo Build completed successfully!
-echo.
+cd ..\..
+
+echo C++ build completed successfully!
