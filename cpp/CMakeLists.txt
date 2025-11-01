@@ -144,9 +144,12 @@ if(NOT OpenSSL_FOUND)
         # Check if OpenSSL is in the project directory
         if(EXISTS "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
             set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
-        # Check if OpenSSL is installed via vcpkg
+        # Check if OpenSSL is installed via vcpkg (Windows)
         elseif(EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
             set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
+        # Check if OpenSSL is installed via vcpkg (Linux)
+        elseif(EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux")
+            set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux")
         endif()
     endif()
     
@@ -177,6 +180,10 @@ if(NOT TARGET OpenSSL::Crypto)
     # Also look for .a files (Linux/macOS/MinGW)
     file(GLOB OPENSSL_CRYPTO_LIBS_A "${OPENSSL_ROOT_DIR}/libcrypto*.a")
     file(GLOB OPENSSL_SSL_LIBS_A "${OPENSSL_ROOT_DIR}/libssl*.a")
+    
+    # Look for import libraries (.dll.a) on Windows/MinGW
+    file(GLOB OPENSSL_CRYPTO_DLL_A "${OPENSSL_ROOT_DIR}/libcrypto*.dll.a")
+    file(GLOB OPENSSL_SSL_DLL_A "${OPENSSL_ROOT_DIR}/libssl*.dll.a")
     
     if(OPENSSL_CRYPTO_LIBS AND OPENSSL_SSL_LIBS)
         # Find specific libraries
@@ -231,6 +238,35 @@ if(NOT TARGET OpenSSL::Crypto)
             target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
         else()
             message(WARNING "Could not find required OpenSSL libraries in ${OPENSSL_ROOT_DIR}")
+        endif()
+    elseif(OPENSSL_CRYPTO_DLL_A AND OPENSSL_SSL_DLL_A)
+        # Find specific import libraries for Windows/MinGW
+        foreach(lib ${OPENSSL_CRYPTO_DLL_A})
+            if(lib MATCHES ".*libcrypto.*\\.dll\\.a$")
+                set(OPENSSL_CRYPTO_LIB ${lib})
+            endif()
+        endforeach()
+        
+        foreach(lib ${OPENSSL_SSL_DLL_A})
+            if(lib MATCHES ".*libssl.*\\.dll\\.a$")
+                set(OPENSSL_SSL_LIB ${lib})
+            endif()
+        endforeach()
+        
+        if(OPENSSL_CRYPTO_LIB AND OPENSSL_SSL_LIB)
+            target_link_libraries(cton-sdk-core PRIVATE 
+                ${OPENSSL_CRYPTO_LIB}
+                ${OPENSSL_SSL_LIB})
+            target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
+            message(STATUS "Using OpenSSL import libraries: ${OPENSSL_CRYPTO_LIB}, ${OPENSSL_SSL_LIB}")
+            
+            # Also set for test executables
+            target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+            target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+            target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+            target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
+        else()
+            message(WARNING "Could not find required OpenSSL import libraries in ${OPENSSL_ROOT_DIR}")
         endif()
     else()
         # Try to find system OpenSSL
@@ -306,11 +342,13 @@ target_include_directories(boc_compliance_test PUBLIC
 target_include_directories(mnemonic_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(bip39_compliance_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(crypto_algorithms_test PUBLIC 

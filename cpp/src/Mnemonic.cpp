@@ -12,9 +12,9 @@
 
 // Include OpenSSL
 #if defined(OPENSSL_AVAILABLE) && OPENSSL_AVAILABLE
-#include "../../openssl-3.6.0/include/openssl/sha.h"
-#include "../../openssl-3.6.0/include/openssl/evp.h"
-#include "../../openssl-3.6.0/include/openssl/kdf.h"
+#include <openssl/sha.h>
+#include <openssl/evp.h>
+#include <openssl/kdf.h>
 #endif
 
 namespace cton {

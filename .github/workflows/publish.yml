@@ -52,19 +52,24 @@ jobs:
       run: |
         mkdir cpp\build
         cd cpp\build
-        cmake .. -G "Visual Studio 17 2022" -A x64
+        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DOPENSSL_ROOT_DIR=../../vcpkg/installed/x64-windows
         cmake --build . --config Release
         
     - name: Copy DLL to resources
       run: |
+        # Check for the library in different possible locations
         if (Test-Path cpp\build\Release\cton-sdk-core.dll) {
-          Copy-Item cpp\build\Release\cton-sdk-core.dll java\src\main\resources\
-          Copy-Item cpp\build\Release\cton-sdk-core.dll java\src\main\resources\win32-x86-64\
+          LIB_FILE=cpp\build\Release\cton-sdk-core.dll
+        } elseif (Test-Path cpp\build\cton-sdk-core.dll) {
+          LIB_FILE=cpp\build\cton-sdk-core.dll
         } else {
           Write-Host "DLL not found, checking in build directory"
-          Get-ChildItem cpp\build\Release\
+          Get-ChildItem cpp\build\
           exit 1
         }
+        
+        Copy-Item $LIB_FILE java\src\main\resources\
+        Copy-Item $LIB_FILE java\src\main\resources\win32-x86-64\
         
     - name: Build Java Components
       run: |
@@ -86,8 +91,10 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: cton-sdk-dll
-        path: cpp/build/Release/cton-sdk-core.dll
-        
+        path: |
+          cpp/build/Release/cton-sdk-core.dll
+          cpp/build/cton-sdk-core.dll
+          
   build-linux:
     runs-on: ubuntu-latest
     steps:
@@ -104,24 +111,43 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake build-essential libssl-dev
         
+    - name: Clone and Install OpenSSL via vcpkg
+      run: |
+        # Check if vcpkg directory exists
+        if [ ! -d "vcpkg" ]; then
+          git clone https://github.com/Microsoft/vcpkg.git
+        fi
+        cd vcpkg
+        # Bootstrap vcpkg if not already done
+        if [ ! -f "vcpkg" ]; then
+          ./bootstrap-vcpkg.sh
+        fi
+        ./vcpkg install openssl
+        cd ..
+        
     - name: Build C++ Core
       run: |
         mkdir cpp/build
         cd cpp/build
-        cmake ..
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake
         cmake --build . --config Release
         
     - name: Copy SO to resources
       run: |
+        # Check for the library in different possible locations
         if [ -f cpp/build/libcton-sdk-core.so ]; then
-          mkdir -p java/src/main/resources/linux-x86-64/
-          cp cpp/build/libcton-sdk-core.so java/src/main/resources/
-          cp cpp/build/libcton-sdk-core.so java/src/main/resources/linux-x86-64/
+          LIB_FILE=cpp/build/libcton-sdk-core.so
+        elif [ -f cpp/build/cton-sdk-core.so ]; then
+          LIB_FILE=cpp/build/cton-sdk-core.so
         else
           echo "SO file not found, checking build directory"
           ls -la cpp/build/
           exit 1
         fi
+        
+        mkdir -p java/src/main/resources/linux-x86-64/
+        cp $LIB_FILE java/src/main/resources/
+        cp $LIB_FILE java/src/main/resources/linux-x86-64/
         
     - name: Build Java Components
       run: |
@@ -143,51 +169,44 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: cton-sdk-so
-        path: cpp/build/libcton-sdk-core.so
-        
-  publish-release:
-    needs: [build-windows, build-linux]
-    runs-on: ubuntu-latest
-    if: github.event_name == 'release'
-    steps:
-    - uses: actions/checkout@v4
-    
-    - name: Download Windows Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: cton-sdk-jar
-        path: artifacts/windows
-        
-    - name: Download DLL Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: cton-sdk-dll
-        path: artifacts/windows
-        
-    - name: Download Linux Artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: cton-sdk-jar-linux
-        path: artifacts/linux
-        
-    - name: Download SO Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: cton-sdk-so
-        path: artifacts/linux
-        
+        path: |
+          cpp/build/libcton-sdk-core.so
+          cpp/build/cton-sdk-core.so
     - name: Create Release Assets
       run: |
+        # Create artifacts directory
+        mkdir -p artifacts
         cd artifacts
+        
         # Create platform-specific packages
-        if [ -d "windows" ] && [ -d "linux" ]; then
-          zip -r cton-sdk-windows.zip windows/
-          tar -czf cton-sdk-linux.tar.gz linux/
+        # Find the actual library files
+        if [ -f "../cpp/build/Release/cton-sdk-core.dll" ]; then
+          WINDOWS_LIB="../cpp/build/Release/cton-sdk-core.dll"
+        elif [ -f "../cpp/build/cton-sdk-core.dll" ]; then
+          WINDOWS_LIB="../cpp/build/cton-sdk-core.dll"
         else
-          echo "Required directories not found"
-          ls -la
+          echo "Windows DLL not found"
+          ls -la ../cpp/build/
           exit 1
         fi
+        
+        if [ -f "../cpp/build/libcton-sdk-core.so" ]; then
+          LINUX_LIB="../cpp/build/libcton-sdk-core.so"
+        elif [ -f "../cpp/build/cton-sdk-core.so" ]; then
+          LINUX_LIB="../cpp/build/cton-sdk-core.so"
+        else
+          echo "Linux SO not found"
+          ls -la ../cpp/build/
+          exit 1
+        fi
+        
+        # Create zip with the actual library files
+        mkdir -p temp/windows
+        mkdir -p temp/linux
+        cp $WINDOWS_LIB temp/windows/
+        cp $LINUX_LIB temp/linux/
+        zip -r cton-sdk-windows.zip temp/windows/
+        tar -czf cton-sdk-linux.tar.gz temp/linux/
         
     - name: Upload Release Assets
       uses: softprops/action-gh-release@v1
