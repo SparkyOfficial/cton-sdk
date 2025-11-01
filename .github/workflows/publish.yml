@@ -52,7 +52,7 @@ jobs:
       run: |
         mkdir cpp\build
         cd cpp\build
-        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DOPENSSL_ROOT_DIR=../../vcpkg/installed/x64-windows
+        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
         cmake --build . --config Release
         
     - name: Copy DLL to resources
@@ -119,17 +119,17 @@ jobs:
         fi
         cd vcpkg
         # Bootstrap vcpkg if not already done
-        if [ ! -f "vcpkg" ]; then
+        if [ ! -f "./vcpkg" ]; then
           ./bootstrap-vcpkg.sh
         fi
-        ./vcpkg install openssl
+        ./vcpkg install openssl:x64-linux
         cd ..
         
     - name: Build C++ Core
       run: |
         mkdir cpp/build
         cd cpp/build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux
         cmake --build . --config Release
         
     - name: Copy SO to resources

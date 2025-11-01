@@ -137,20 +137,19 @@ target_include_directories(cton-sdk-core PUBLIC
 # Find OpenSSL
 find_package(OpenSSL QUIET)
 
-# If OpenSSL is not found, try to find it in the project directory or vcpkg
+# If OpenSSL is not found, try to find it in the project directory
 if(NOT OpenSSL_FOUND)
     # Set default OpenSSL root directory
     if(NOT DEFINED OPENSSL_ROOT_DIR)
         # Check if OpenSSL is in the project directory
         if(EXISTS "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
             set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
-        # Check if OpenSSL is installed via vcpkg (Windows)
-        elseif(EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
-            set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
-        # Check if OpenSSL is installed via vcpkg (Linux)
-        elseif(EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux")
-            set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-linux")
         endif()
+    endif()
+    
+    # If we still don't have OpenSSL, try to find it again
+    if(NOT DEFINED OPENSSL_ROOT_DIR)
+        find_package(OpenSSL REQUIRED)
     endif()
     
     # Set OpenSSL include directory
@@ -164,6 +163,13 @@ endif()
 
 # Include OpenSSL headers for all targets that need it
 if(OPENSSL_INCLUDE_DIR)
+    target_include_directories(cton-sdk-core PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_include_directories(crypto_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_include_directories(ed25519_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_include_directories(crypto_algorithms_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_include_directories(crypto_security_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+elseif(OpenSSL_FOUND AND OPENSSL_INCLUDE_DIR)
+    # If OpenSSL was found through find_package, use its include directories
     target_include_directories(cton-sdk-core PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_include_directories(crypto_test PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_include_directories(ed25519_test PRIVATE ${OPENSSL_INCLUDE_DIR})
