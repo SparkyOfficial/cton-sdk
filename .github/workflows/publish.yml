@@ -19,6 +19,8 @@ jobs:
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
     - name: Set up JDK 11
       uses: actions/setup-java@v4
@@ -34,17 +36,15 @@ jobs:
       with:
         cmake-version: '3.22.x'
         
+    - name: Bootstrap vcpkg
+      run: |
+        cd vcpkg
+        cmd /c "%cd%\bootstrap-vcpkg.bat"
+        cd ..
+        
     - name: Install OpenSSL via vcpkg
       run: |
-        # Check if vcpkg directory exists
-        if (!(Test-Path "vcpkg")) {
-          git clone https://github.com/Microsoft/vcpkg.git
-        }
         cd vcpkg
-        # Bootstrap vcpkg if not already done
-        if (!(Test-Path "vcpkg.exe")) {
-          cmd /c "%cd%\bootstrap-vcpkg.bat"
-        }
         cmd /c vcpkg install openssl:x64-windows
         cd ..
         
@@ -101,6 +101,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
     - name: Set up JDK 11
       uses: actions/setup-java@v4
@@ -113,17 +115,15 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y cmake build-essential libssl-dev
         
-    - name: Clone and Install OpenSSL via vcpkg
+    - name: Bootstrap vcpkg
       run: |
-        # Check if vcpkg directory exists
-        if [ ! -d "vcpkg" ]; then
-          git clone https://github.com/Microsoft/vcpkg.git
-        fi
         cd vcpkg
-        # Bootstrap vcpkg if not already done
-        if [ ! -f "./vcpkg" ]; then
-          ./bootstrap-vcpkg.sh
-        fi
+        ./bootstrap-vcpkg.sh
+        cd ..
+        
+    - name: Install OpenSSL via vcpkg
+      run: |
+        cd vcpkg
         ./vcpkg install openssl:x64-linux
         cd ..
         
