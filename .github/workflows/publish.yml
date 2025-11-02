@@ -43,7 +43,7 @@ jobs:
         cd vcpkg
         # Bootstrap vcpkg if not already done
         if (!(Test-Path "vcpkg.exe")) {
-          cmd /c bootstrap-vcpkg.bat
+          cmd /c "%cd%\bootstrap-vcpkg.bat"
         }
         cmd /c vcpkg install openssl:x64-windows
         cd ..
@@ -52,16 +52,18 @@ jobs:
       run: |
         mkdir cpp\build
         cd cpp\build
-        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-windows
+        # Use absolute path for vcpkg toolchain to avoid path issues in CI
+        $VCPKG_PATH = Join-Path $env:GITHUB_WORKSPACE "vcpkg\scripts\buildsystems\vcpkg.cmake"
+        cmake .. -G "Visual Studio 17 2022" -A x64 -DCMAKE_TOOLCHAIN_FILE="$VCPKG_PATH" -DVCPKG_TARGET_TRIPLET=x64-windows
         cmake --build . --config Release
         
     - name: Copy DLL to resources
       run: |
         # Check for the library in different possible locations
         if (Test-Path cpp\build\Release\cton-sdk-core.dll) {
-          LIB_FILE=cpp\build\Release\cton-sdk-core.dll
+          $LIB_FILE="cpp\build\Release\cton-sdk-core.dll"
         } elseif (Test-Path cpp\build\cton-sdk-core.dll) {
-          LIB_FILE=cpp\build\cton-sdk-core.dll
+          $LIB_FILE="cpp\build\cton-sdk-core.dll"
         } else {
           Write-Host "DLL not found, checking in build directory"
           Get-ChildItem cpp\build\
@@ -129,7 +131,9 @@ jobs:
       run: |
         mkdir cpp/build
         cd cpp/build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DVCPKG_TARGET_TRIPLET=x64-linux
+        # Use absolute path for vcpkg toolchain to avoid path issues in CI
+        VCPKG_PATH="$GITHUB_WORKSPACE/vcpkg/scripts/buildsystems/vcpkg.cmake"
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="$VCPKG_PATH" -DVCPKG_TARGET_TRIPLET=x64-linux
         cmake --build . --config Release
         
     - name: Copy SO to resources
