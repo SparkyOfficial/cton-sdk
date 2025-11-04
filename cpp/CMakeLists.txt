@@ -1,7 +1,7 @@
 # CTON-SDK C++ Core Library
 # Author: Андрій Будильников (Sparky)
 
-cmake_minimum_required(VERSION 3.10)
+cmake_minimum_required(VERSION 3.22)
 
 project(cton-sdk-core)
 set(CMAKE_CXX_STANDARD 17)
@@ -135,31 +135,7 @@ target_include_directories(cton-sdk-core PUBLIC
 )
 
 # Find OpenSSL
-find_package(OpenSSL QUIET)
-
-# If OpenSSL is not found, try to find it in the project directory
-if(NOT OpenSSL_FOUND)
-    # Set default OpenSSL root directory
-    if(NOT DEFINED OPENSSL_ROOT_DIR)
-        # Check if OpenSSL is in the project directory
-        if(EXISTS "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
-            set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
-        endif()
-    endif()
-    
-    # If we still don't have OpenSSL, try to find it again
-    if(NOT DEFINED OPENSSL_ROOT_DIR)
-        find_package(OpenSSL REQUIRED)
-    endif()
-    
-    # Set OpenSSL include directory
-    if(EXISTS "${OPENSSL_ROOT_DIR}/include")
-        set(OPENSSL_INCLUDE_DIR "${OPENSSL_ROOT_DIR}/include")
-    endif()
-    
-    message(STATUS "OpenSSL root directory: ${OPENSSL_ROOT_DIR}")
-    message(STATUS "OpenSSL include directory: ${OPENSSL_INCLUDE_DIR}")
-endif()
+find_package(OpenSSL REQUIRED)
 
 # Include OpenSSL headers for all targets that need it
 if(OPENSSL_INCLUDE_DIR)
@@ -168,129 +144,36 @@ if(OPENSSL_INCLUDE_DIR)
     target_include_directories(ed25519_test PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_include_directories(crypto_algorithms_test PRIVATE ${OPENSSL_INCLUDE_DIR})
     target_include_directories(crypto_security_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-elseif(OpenSSL_FOUND AND OPENSSL_INCLUDE_DIR)
+    target_include_directories(mnemonic_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_include_directories(bip39_compliance_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+elseif(OpenSSL_FOUND)
     # If OpenSSL was found through find_package, use its include directories
-    target_include_directories(cton-sdk-core PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(crypto_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(ed25519_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(crypto_algorithms_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(crypto_security_test PRIVATE ${OPENSSL_INCLUDE_DIR})
+    target_include_directories(cton-sdk-core PRIVATE ${OpenSSL_INCLUDE_DIRS})
+    target_include_directories(crypto_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
+    target_include_directories(ed25519_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
+    target_include_directories(crypto_algorithms_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
+    target_include_directories(crypto_security_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
+    target_include_directories(mnemonic_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
+    target_include_directories(bip39_compliance_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
 endif()
 
-# If we couldn't find the libraries above, try to find them directly
-if(NOT TARGET OpenSSL::Crypto)
-    # Look for the DLL files directly in the OpenSSL directory
-    file(GLOB OPENSSL_CRYPTO_LIBS "${OPENSSL_ROOT_DIR}/libcrypto*.lib")
-    file(GLOB OPENSSL_SSL_LIBS "${OPENSSL_ROOT_DIR}/libssl*.lib")
+# Link OpenSSL libraries
+if(OpenSSL_FOUND)
+    target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+    target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
     
-    # Also look for .a files (Linux/macOS/MinGW)
-    file(GLOB OPENSSL_CRYPTO_LIBS_A "${OPENSSL_ROOT_DIR}/libcrypto*.a")
-    file(GLOB OPENSSL_SSL_LIBS_A "${OPENSSL_ROOT_DIR}/libssl*.a")
+    # Also set for test executables
+    target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
+    target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
+    target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
+    target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
+    target_compile_definitions(mnemonic_test PRIVATE OPENSSL_AVAILABLE=1)
+    target_compile_definitions(bip39_compliance_test PRIVATE OPENSSL_AVAILABLE=1)
     
-    # Look for import libraries (.dll.a) on Windows/MinGW
-    file(GLOB OPENSSL_CRYPTO_DLL_A "${OPENSSL_ROOT_DIR}/libcrypto*.dll.a")
-    file(GLOB OPENSSL_SSL_DLL_A "${OPENSSL_ROOT_DIR}/libssl*.dll.a")
-    
-    if(OPENSSL_CRYPTO_LIBS AND OPENSSL_SSL_LIBS)
-        # Find specific libraries
-        foreach(lib ${OPENSSL_CRYPTO_LIBS})
-            if(lib MATCHES ".*libcrypto.*")
-                set(OPENSSL_CRYPTO_LIB ${lib})
-            elseif(lib MATCHES ".*libssl.*")
-                set(OPENSSL_SSL_LIB ${lib})
-            endif()
-        endforeach()
-        
-        if(OPENSSL_CRYPTO_LIB AND OPENSSL_SSL_LIB)
-            target_link_libraries(cton-sdk-core PRIVATE 
-                ${OPENSSL_CRYPTO_LIB}
-                ${OPENSSL_SSL_LIB})
-            target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
-            message(STATUS "Using OpenSSL libraries: ${OPENSSL_CRYPTO_LIB}, ${OPENSSL_SSL_LIB}")
-            
-            # Also set for test executables
-            target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
-        else()
-            message(WARNING "Could not find required OpenSSL libraries in ${OPENSSL_ROOT_DIR}")
-        endif()
-    elseif(OPENSSL_CRYPTO_LIBS_A AND OPENSSL_SSL_LIBS_A)
-        # Find specific libraries
-        foreach(lib ${OPENSSL_CRYPTO_LIBS_A})
-            if(lib MATCHES ".*libcrypto\\.a$")
-                set(OPENSSL_CRYPTO_LIB ${lib})
-            endif()
-        endforeach()
-        
-        foreach(lib ${OPENSSL_SSL_LIBS_A})
-            if(lib MATCHES ".*libssl\\.a$")
-                set(OPENSSL_SSL_LIB ${lib})
-            endif()
-        endforeach()
-        
-        if(OPENSSL_CRYPTO_LIB AND OPENSSL_SSL_LIB)
-            target_link_libraries(cton-sdk-core PRIVATE 
-                ${OPENSSL_CRYPTO_LIB}
-                ${OPENSSL_SSL_LIB})
-            target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
-            message(STATUS "Using OpenSSL libraries: ${OPENSSL_CRYPTO_LIB}, ${OPENSSL_SSL_LIB}")
-            
-            # Also set for test executables
-            target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
-        else()
-            message(WARNING "Could not find required OpenSSL libraries in ${OPENSSL_ROOT_DIR}")
-        endif()
-    elseif(OPENSSL_CRYPTO_DLL_A AND OPENSSL_SSL_DLL_A)
-        # Find specific import libraries for Windows/MinGW
-        foreach(lib ${OPENSSL_CRYPTO_DLL_A})
-            if(lib MATCHES ".*libcrypto.*\\.dll\\.a$")
-                set(OPENSSL_CRYPTO_LIB ${lib})
-            endif()
-        endforeach()
-        
-        foreach(lib ${OPENSSL_SSL_DLL_A})
-            if(lib MATCHES ".*libssl.*\\.dll\\.a$")
-                set(OPENSSL_SSL_LIB ${lib})
-            endif()
-        endforeach()
-        
-        if(OPENSSL_CRYPTO_LIB AND OPENSSL_SSL_LIB)
-            target_link_libraries(cton-sdk-core PRIVATE 
-                ${OPENSSL_CRYPTO_LIB}
-                ${OPENSSL_SSL_LIB})
-            target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
-            message(STATUS "Using OpenSSL import libraries: ${OPENSSL_CRYPTO_LIB}, ${OPENSSL_SSL_LIB}")
-            
-            # Also set for test executables
-            target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
-        else()
-            message(WARNING "Could not find required OpenSSL import libraries in ${OPENSSL_ROOT_DIR}")
-        endif()
-    else()
-        # Try to find system OpenSSL
-        find_package(OpenSSL)
-        if(OpenSSL_FOUND)
-            target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
-            target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
-            message(STATUS "Using system OpenSSL libraries")
-            
-            # Also set for test executables
-            target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
-            target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
-        else()
-            message(FATAL_ERROR "OpenSSL libraries not found. OpenSSL is required for cryptographic operations.")
-        endif()
-    endif()
+    message(STATUS "Using OpenSSL libraries: ${OpenSSL_LIBRARIES}")
+    message(STATUS "Using OpenSSL version: ${OPENSSL_VERSION}")
+else()
+    message(FATAL_ERROR "OpenSSL libraries not found. OpenSSL is required for cryptographic operations.")
 endif()
 
 target_include_directories(cton-sdk-test PUBLIC 
@@ -316,7 +199,6 @@ target_include_directories(address_test PUBLIC
 target_include_directories(crypto_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(boc_test PUBLIC 
@@ -337,7 +219,6 @@ target_include_directories(comprehensive_test PUBLIC
 target_include_directories(ed25519_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(boc_compliance_test PUBLIC 
@@ -348,19 +229,16 @@ target_include_directories(boc_compliance_test PUBLIC
 target_include_directories(mnemonic_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(bip39_compliance_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(crypto_algorithms_test PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/test
     ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${OPENSSL_INCLUDE_DIR}
 )
 
 target_include_directories(boc_performance_test PUBLIC 
