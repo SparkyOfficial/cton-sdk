@@ -154,7 +154,7 @@ jobs:
         Get-ChildItem "..\src\main\resources" -ErrorAction SilentlyContinue | ForEach-Object {
           Write-Host $_.Name
         }
-        mvn test -Djna.library.path="..\src\main\resources"
+        mvn test "-Djna.library.path=..\src\main\resources"
         
     - name: Upload JAR Artifact
       uses: actions/upload-artifact@v4
@@ -261,7 +261,7 @@ jobs:
         cd java
         # Set JNA library path to point to the resources directory where the SO is located
         export JNA_LIBRARY_PATH="../src/main/resources"
-        mvn test -Djna.library.path="../src/main/resources"
+        mvn test "-Djna.library.path=../src/main/resources"
         
     - name: Upload JAR Artifact
       uses: actions/upload-artifact@v4
