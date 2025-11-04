@@ -103,13 +103,16 @@ jobs:
         }
         
         # Check for the library in different possible locations
+        $LIB_FILE = $null
         if (Test-Path cpp\build\Release\cton-sdk-core.dll) {
           $LIB_FILE="cpp\build\Release\cton-sdk-core.dll"
         } elseif (Test-Path cpp\build\cton-sdk-core.dll) {
           $LIB_FILE="cpp\build\cton-sdk-core.dll"
+        } elseif (Test-Path cpp\build\Debug\cton-sdk-core.dll) {
+          $LIB_FILE="cpp\build\Debug\cton-sdk-core.dll"
         } else {
           Write-Host "DLL not found, checking in build directory"
-          Get-ChildItem cpp\build\
+          Get-ChildItem cpp\build\ -Recurse -Filter "*.dll" -ErrorAction SilentlyContinue
           exit 1
         }
         
@@ -171,6 +174,7 @@ jobs:
         path: |
           cpp/build/Release/cton-sdk-core.dll
           cpp/build/cton-sdk-core.dll
+          cpp/build/Debug/cton-sdk-core.dll
           
   build-linux:
     runs-on: ubuntu-latest
@@ -247,6 +251,7 @@ jobs:
         else
           echo "SO file not found, checking build directory"
           ls -la cpp/build/
+          find cpp/build/ -name "*.so" 2>/dev/null || echo "No .so files found"
           exit 1
         fi
         
@@ -291,6 +296,8 @@ jobs:
           WINDOWS_LIB="../cpp/build/Release/cton-sdk-core.dll"
         elif [ -f "../cpp/build/cton-sdk-core.dll" ]; then
           WINDOWS_LIB="../cpp/build/cton-sdk-core.dll"
+        elif [ -f "../cpp/build/Debug/cton-sdk-core.dll" ]; then
+          WINDOWS_LIB="../cpp/build/Debug/cton-sdk-core.dll"
         fi
         
         # Find the actual library files - Linux
@@ -306,12 +313,15 @@ jobs:
           echo "Windows DLL not found, listing build directory:"
           ls -la ../cpp/build/
           ls -la ../cpp/build/Release/ 2>/dev/null || echo "Release directory not found"
+          ls -la ../cpp/build/Debug/ 2>/dev/null || echo "Debug directory not found"
+          find ../cpp/build/ -name "*.dll" 2>/dev/null || echo "No .dll files found"
           exit 1
         fi
         
         if [ -z "$LINUX_LIB" ]; then
           echo "Linux SO not found, listing build directory:"
           ls -la ../cpp/build/
+          find ../cpp/build/ -name "*.so" 2>/dev/null || echo "No .so files found"
           exit 1
         fi
         
