@@ -82,6 +82,17 @@ jobs:
         
     - name: Copy DLL to resources
       run: |
+        # Ensure destination directories exist
+        $resourcesDir = "java\src\main\resources"
+        $winResourcesDir = "java\src\main\resources\win32-x86-64"
+        
+        if (!(Test-Path $resourcesDir)) {
+          New-Item -ItemType Directory -Path $resourcesDir -Force
+        }
+        if (!(Test-Path $winResourcesDir)) {
+          New-Item -ItemType Directory -Path $winResourcesDir -Force
+        }
+        
         # Check for the library in different possible locations
         if (Test-Path cpp\build\Release\cton-sdk-core.dll) {
           $LIB_FILE="cpp\build\Release\cton-sdk-core.dll"
@@ -93,8 +104,8 @@ jobs:
           exit 1
         }
         
-        Copy-Item $LIB_FILE java\src\main\resources\
-        Copy-Item $LIB_FILE java\src\main\resources\win32-x86-64\
+        Copy-Item $LIB_FILE $resourcesDir\
+        Copy-Item $LIB_FILE $winResourcesDir\
         
     - name: Build Java Components
       run: |
@@ -183,6 +194,10 @@ jobs:
         
     - name: Copy SO to resources
       run: |
+        # Ensure destination directories exist
+        mkdir -p java/src/main/resources/
+        mkdir -p java/src/main/resources/linux-x86-64/
+        
         # Check for the library in different possible locations
         if [ -f cpp/build/libcton-sdk-core.so ]; then
           LIB_FILE=cpp/build/libcton-sdk-core.so
@@ -194,7 +209,6 @@ jobs:
           exit 1
         fi
         
-        mkdir -p java/src/main/resources/linux-x86-64/
         cp $LIB_FILE java/src/main/resources/
         cp $LIB_FILE java/src/main/resources/linux-x86-64/
         
