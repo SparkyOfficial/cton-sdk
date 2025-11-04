@@ -47,7 +47,10 @@ jobs:
         cd vcpkg
         # Bootstrap vcpkg if not already done
         if (!(Test-Path "vcpkg.exe")) {
+          Write-Host "Bootstrapping vcpkg..."
           cmd /c ".\bootstrap-vcpkg.bat"
+        } else {
+          Write-Host "vcpkg already bootstrapped"
         }
         # Verify the toolchain file exists
         $toolchainPath = "scripts\buildsystems\vcpkg.cmake"
@@ -61,7 +64,11 @@ jobs:
     - name: Install OpenSSL via vcpkg
       run: |
         cd vcpkg
+        Write-Host "Installing OpenSSL..."
         cmd /c ".\vcpkg install openssl:x64-windows"
+        Write-Host "OpenSSL installation completed"
+        # List installed packages for debugging
+        cmd /c ".\vcpkg list"
         cd ..
         
     - name: Build C++ Core
@@ -104,14 +111,31 @@ jobs:
           exit 1
         }
         
+        Write-Host "Copying $LIB_FILE to resources directories"
         Copy-Item $LIB_FILE $resourcesDir\
         Copy-Item $LIB_FILE $winResourcesDir\
         
         # Copy OpenSSL DLLs required by the native library
         $vcpkgBinDir = "vcpkg\installed\x64-windows\bin"
+        Write-Host "Checking for OpenSSL DLLs in $vcpkgBinDir"
         if (Test-Path $vcpkgBinDir) {
-          Copy-Item "$vcpkgBinDir\libcrypto-3-x64.dll" $resourcesDir\ -ErrorAction SilentlyContinue
-          Copy-Item "$vcpkgBinDir\libssl-3-x64.dll" $resourcesDir\ -ErrorAction SilentlyContinue
+          Write-Host "Found vcpkg bin directory, copying OpenSSL DLLs"
+          Get-ChildItem $vcpkgBinDir\*.dll | ForEach-Object {
+            Write-Host "Copying $($_.Name)"
+            Copy-Item $_.FullName $resourcesDir\ -ErrorAction SilentlyContinue
+          }
+        } else {
+          Write-Host "vcpkg bin directory not found, checking alternative locations"
+          # List vcpkg structure for debugging
+          Get-ChildItem -Recurse vcpkg\installed -ErrorAction SilentlyContinue | ForEach-Object {
+            Write-Host $_.FullName
+          }
+        }
+        
+        # List contents of resources directory for debugging
+        Write-Host "Contents of resources directory:"
+        Get-ChildItem $resourcesDir -ErrorAction SilentlyContinue | ForEach-Object {
+          Write-Host $_.Name
         }
         
     - name: Build Java Components
@@ -124,6 +148,12 @@ jobs:
         cd java
         # Set JNA library path to point to the resources directory where the DLL is located
         $env:JNA_LIBRARY_PATH = "..\src\main\resources"
+        Write-Host "JNA_LIBRARY_PATH set to: $env:JNA_LIBRARY_PATH"
+        # List contents of resources directory for debugging
+        Write-Host "Contents of resources directory:"
+        Get-ChildItem "..\src\main\resources" -ErrorAction SilentlyContinue | ForEach-Object {
+          Write-Host $_.Name
+        }
         mvn test -Djna.library.path="..\src\main\resources"
         
     - name: Upload JAR Artifact
