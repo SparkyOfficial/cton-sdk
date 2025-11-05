@@ -1,3 +1,5 @@
+openssl-3.6.0
+
 # Build output directories
 cpp/build/
 cpp/cmake-build*/
