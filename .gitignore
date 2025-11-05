@@ -1,4 +1,15 @@
-openssl-3.6.0
+# vcpkg directories
+vcpkg/buildtrees/
+vcpkg/downloads/
+vcpkg/installed/
+vcpkg/packages/
+vcpkg/scripts/buildsystems/tmp/
+vcpkg/vcpkg
+vcpkg/vcpkg.exe
+
+# OpenSSL (if downloaded manually)
+openssl-*
+
 
 # Build output directories
 cpp/build/
