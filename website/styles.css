@@ -37,7 +37,22 @@ header .container {
 
 .logo {
     display: flex;
-    align-items: baseline;
+    align-items: center;
+}
+
+.logo-img {
+    height: 40px;
+    width: auto;
+}
+
+@media (max-width: 768px) {
+    .logo-img {
+        height: 30px;
+    }
+    
+    .footer-logo-img {
+        height: 25px;
+    }
 }
 
 .logo-text {
@@ -363,8 +378,13 @@ footer {
 
 .footer-logo {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     margin-bottom: 1rem;
+}
+
+.footer-logo-img {
+    height: 30px;
+    width: auto;
 }
 
 .footer-logo .logo-text {
