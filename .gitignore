@@ -64,6 +64,7 @@ Makefile
 # Temporary files
 *.tmp
 *.temp
+.kiro
 
 # Documentation build output (if any)
 docs/_build/

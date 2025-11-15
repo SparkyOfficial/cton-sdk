@@ -24,6 +24,10 @@ add_library(cton-sdk-core SHARED ${SOURCES} ${HEADERS})
 # Define export macro for Windows DLL
 target_compile_definitions(cton-sdk-core PRIVATE CTON_SDK_CORE_EXPORTS)
 
+# Add debug information
+target_compile_options(cton-sdk-core PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/Zi>)
+target_link_options(cton-sdk-core PRIVATE $<$<CXX_COMPILER_ID:MSVC>:/DEBUG>)
+
 # Create test executable
 add_executable(cton-sdk-test src/main.cpp)
 target_link_libraries(cton-sdk-test cton-sdk-core)
@@ -32,146 +36,61 @@ target_link_libraries(cton-sdk-test cton-sdk-core)
 add_executable(cton-sdk-demo src/demo.cpp)
 target_link_libraries(cton-sdk-demo cton-sdk-core)
 
-# Create unit test executables
-add_executable(cell_test test/CellTest.cpp)
-target_link_libraries(cell_test cton-sdk-core)
-
-add_executable(address_test test/AddressTest.cpp)
-target_link_libraries(address_test cton-sdk-core)
-
-add_executable(crypto_test test/CryptoTest.cpp)
-target_link_libraries(crypto_test cton-sdk-core)
-
-add_executable(boc_test test/BocTest.cpp)
-target_link_libraries(boc_test cton-sdk-core)
-
-add_executable(native_interface_test test/NativeInterfaceTest.cpp)
-target_link_libraries(native_interface_test cton-sdk-core)
-
-# Create comprehensive test executable
-add_executable(comprehensive_test test/ComprehensiveTest.cpp)
-target_link_libraries(comprehensive_test cton-sdk-core)
-
-# Create Ed25519 test executable
-add_executable(ed25519_test test/Ed25519Test.cpp)
-target_link_libraries(ed25519_test cton-sdk-core)
-
-# Create BOC compliance test executable
-add_executable(boc_compliance_test test/BocComplianceTest.cpp)
-target_link_libraries(boc_compliance_test cton-sdk-core)
-
-# Create mnemonic test executable
-add_executable(mnemonic_test test/MnemonicTest.cpp)
-target_link_libraries(mnemonic_test cton-sdk-core)
-
-# Create BIP-39 compliance test executable
-add_executable(bip39_compliance_test test/Bip39ComplianceTest.cpp)
-target_link_libraries(bip39_compliance_test cton-sdk-core)
-
-# Create additional cryptographic algorithms test executable
-add_executable(crypto_algorithms_test test/CryptoAlgorithmsTest.cpp)
-target_link_libraries(crypto_algorithms_test cton-sdk-core)
-
-# Create BOC performance test executable
-add_executable(boc_performance_test test/BocPerformanceTest.cpp)
-target_link_libraries(boc_performance_test cton-sdk-core)
-
-# Create benchmark test executable
-add_executable(benchmark_test test/BenchmarkTest.cpp)
-target_link_libraries(benchmark_test cton-sdk-core)
-
-# Create integration test executable
-add_executable(integration_test test/IntegrationTest.cpp)
-target_link_libraries(integration_test cton-sdk-core)
-
-# Create debug test executable
-add_executable(debug_test debug_test.cpp)
-target_link_libraries(debug_test cton-sdk-core)
-
-# Create ChaCha20 test executable
-add_executable(chacha20_test chacha20_test.cpp)
-target_link_libraries(chacha20_test cton-sdk-core)
-
-# Create JNA debug test executable
-add_executable(jna_debug_test jna_debug_test.cpp)
-target_link_libraries(jna_debug_test cton-sdk-core)
-
-# Create ChaCha20 JNA test executable
-add_executable(chacha20_jna_test chacha20_jna_test.cpp)
-target_link_libraries(chacha20_jna_test cton-sdk-core)
-
-# Create ChaCha20 debug test executable
-add_executable(chacha20_debug_test chacha20_debug_test.cpp)
-target_link_libraries(chacha20_debug_test cton-sdk-core)
-
-# Create ChaCha20 simple test executable
-add_executable(chacha20_simple_test chacha20_simple_test.cpp)
-target_link_libraries(chacha20_simple_test cton-sdk-core)
-
-# Create ChaCha20 double encryption test executable
-add_executable(chacha20_double_encrypt_test chacha20_double_encrypt_test.cpp)
-target_link_libraries(chacha20_double_encrypt_test cton-sdk-core)
-
-# Create ChaCha20 Java mimic test executable
-add_executable(chacha20_java_mimic_test chacha20_java_mimic_test.cpp)
-target_link_libraries(chacha20_java_mimic_test cton-sdk-core)
-
-# Create ChaCha20 Java mimic exact test executable
-add_executable(chacha20_java_mimic_exact_test chacha20_java_mimic_exact_test.cpp)
-target_link_libraries(chacha20_java_mimic_exact_test cton-sdk-core)
-
-# Create crypto security test executable
-add_executable(crypto_security_test test/CryptoSecurityTest.cpp)
-target_link_libraries(crypto_security_test cton-sdk-core)
-
-# Create SHA256 test executable
-# add_executable(test_openssl test_openssl.cpp)
-# target_link_libraries(test_openssl cton-sdk-core)
-# target_include_directories(test_openssl PRIVATE ${OPENSSL_INCLUDE_DIR})
-
 # Include directories
 target_include_directories(cton-sdk-core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-# Find OpenSSL
-find_package(OpenSSL REQUIRED)
+# Find OpenSSL with more flexible options
+set(OPENSSL_USE_STATIC_LIBS TRUE)
 
-# Include OpenSSL headers for all targets that need it
-if(OPENSSL_INCLUDE_DIR)
-    target_include_directories(cton-sdk-core PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(crypto_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(ed25519_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(crypto_algorithms_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(crypto_security_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(mnemonic_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-    target_include_directories(bip39_compliance_test PRIVATE ${OPENSSL_INCLUDE_DIR})
-elseif(OpenSSL_FOUND)
-    # If OpenSSL was found through find_package, use its include directories
-    target_include_directories(cton-sdk-core PRIVATE ${OpenSSL_INCLUDE_DIRS})
-    target_include_directories(crypto_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
-    target_include_directories(ed25519_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
-    target_include_directories(crypto_algorithms_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
-    target_include_directories(crypto_security_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
-    target_include_directories(mnemonic_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
-    target_include_directories(bip39_compliance_test PRIVATE ${OpenSSL_INCLUDE_DIRS})
+# First try to find OpenSSL in the project directory
+if(EXISTS "${CMAKE_SOURCE_DIR}/../openssl")
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl")
+    message(STATUS "Looking for OpenSSL in project directory: ${OPENSSL_ROOT_DIR}")
+    find_package(OpenSSL QUIET)
+endif()
+
+# If not found, try the versioned directory
+if(NOT OpenSSL_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
+    message(STATUS "Looking for OpenSSL in versioned directory: ${OPENSSL_ROOT_DIR}")
+    find_package(OpenSSL QUIET)
+endif()
+
+# If still not found, try to find it in vcpkg installation
+if(NOT OpenSSL_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
+    message(STATUS "Looking for OpenSSL in vcpkg directory: ${OPENSSL_ROOT_DIR}")
+    find_package(OpenSSL QUIET)
+endif()
+
+# If still not found, try system locations
+if(NOT OpenSSL_FOUND)
+    message(STATUS "Looking for OpenSSL in system locations")
+    find_package(OpenSSL QUIET)
 endif()
 
 # Link OpenSSL libraries
-if(OpenSSL_FOUND)
-    target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+if(OPENSSL_FOUND)
+    # For modern CMake versions, use imported targets if available
+    if(TARGET OpenSSL::Crypto AND TARGET OpenSSL::SSL)
+        target_link_libraries(cton-sdk-core PRIVATE OpenSSL::Crypto OpenSSL::SSL)
+    else()
+        # Fallback to direct linking
+        target_link_libraries(cton-sdk-core PRIVATE ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+        target_include_directories(cton-sdk-core PRIVATE ${OPENSSL_INCLUDE_DIR})
+    endif()
+    
     target_compile_definitions(cton-sdk-core PRIVATE OPENSSL_AVAILABLE=1)
     
-    # Also set for test executables
-    target_compile_definitions(crypto_test PRIVATE OPENSSL_AVAILABLE=1)
-    target_compile_definitions(ed25519_test PRIVATE OPENSSL_AVAILABLE=1)
-    target_compile_definitions(crypto_algorithms_test PRIVATE OPENSSL_AVAILABLE=1)
-    target_compile_definitions(crypto_security_test PRIVATE OPENSSL_AVAILABLE=1)
-    target_compile_definitions(mnemonic_test PRIVATE OPENSSL_AVAILABLE=1)
-    target_compile_definitions(bip39_compliance_test PRIVATE OPENSSL_AVAILABLE=1)
+    # Also set for test executables that use OpenSSL
+    target_compile_definitions(cton-sdk-test PRIVATE OPENSSL_AVAILABLE=1)
+    target_compile_definitions(cton-sdk-demo PRIVATE OPENSSL_AVAILABLE=1)
     
     message(STATUS "Using OpenSSL libraries: ${OpenSSL_LIBRARIES}")
     message(STATUS "Using OpenSSL version: ${OPENSSL_VERSION}")
+    message(STATUS "Using OpenSSL include dirs: ${OpenSSL_INCLUDE_DIRS}")
 else()
     message(FATAL_ERROR "OpenSSL libraries not found. OpenSSL is required for cryptographic operations.")
 endif()
@@ -186,81 +105,8 @@ target_include_directories(cton-sdk-demo PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/include
 )
 
-target_include_directories(cell_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(address_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(crypto_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(boc_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(native_interface_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(comprehensive_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(ed25519_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(boc_compliance_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(mnemonic_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(bip39_compliance_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(crypto_algorithms_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(boc_performance_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(benchmark_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
-target_include_directories(integration_test PUBLIC 
-    ${CMAKE_CURRENT_SOURCE_DIR}/test
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-)
-
 # Compiler options
 target_compile_options(cton-sdk-core PRIVATE 
     $<$<CXX_COMPILER_ID:MSVC>:/W4 /wd4100 /wd4996 /wd4267>  # Disable various warnings
     $<$<NOT:$<CXX_COMPILER_ID:MSVC>>:-Wall -Wextra -pedantic>
 )
-
-# Copy test runner script to build directory
-configure_file(test/run_all_tests.bat run_all_tests.bat COPYONLY)

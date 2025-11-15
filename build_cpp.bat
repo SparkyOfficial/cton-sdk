@@ -26,18 +26,11 @@ if not exist vcpkg.exe (
     )
 )
 
-REM Check if OpenSSL is installed
-if not exist installed\x64-windows\lib\ (
-    echo Installing OpenSSL via vcpkg...
-    cmd /c vcpkg install openssl:x64-windows
-    if %ERRORLEVEL% NEQ 0 (
-        echo Failed to install OpenSSL
-        cd ..
-        exit /b %ERRORLEVEL%
-    )
-    echo OpenSSL installed successfully!
-) else (
-    echo OpenSSL already installed
+REM Try to integrate vcpkg with the system
+echo Integrating vcpkg...
+cmd /c vcpkg integrate install
+if %ERRORLEVEL% NEQ 0 (
+    echo Warning: Failed to integrate vcpkg, continuing anyway...
 )
 
 cd ..
@@ -45,9 +38,9 @@ cd ..
 REM Create build directory
 if not exist cpp\build mkdir cpp\build
 
-REM Build C++ core
+REM Build C++ core without explicit toolchain (rely on system OpenSSL)
 cd cpp\build
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../../vcpkg/scripts/buildsystems/vcpkg.cmake -DOPENSSL_ROOT_DIR=../../vcpkg/installed/x64-windows
+cmake .. -G "Visual Studio 17 2022" -A x64
 cmake --build . --config Release
 
 REM Check if build was successful
