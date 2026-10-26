@@ -5,10 +5,13 @@ package com.cton.sdk;
 
 import java.io.Closeable;
 import java.lang.ref.Cleaner;
+import java.util.Arrays;
+import java.util.List;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.Pointer;
+import com.sun.jna.Structure;
 
 /**
  * Java обгортка для Boc C++ класу
@@ -31,10 +34,7 @@ public class Boc implements Closeable {
         void boc_destroy(Pointer boc);
         
         // Серіалізувати BOC в бінарне представлення
-        Pointer boc_serialize(Pointer boc, boolean hasIdx, boolean hashCRC);
-        
-        // Отримати розмір серіалізованих даних BOC
-        int boc_get_serialized_size(Pointer boc, boolean hasIdx, boolean hashCRC);
+        NativeBuffer boc_serialize(Pointer boc, boolean hasIdx, boolean hashCRC);
         
         // Десеріалізувати BOC з бінарного представлення
         Pointer boc_deserialize(byte[] data, int length);
@@ -47,6 +47,23 @@ public class Boc implements Closeable {
         
         // Функція для звільнення пам'яті
         void free_string(Pointer str);
+
+        // Звільнити буфер, виділений malloc у DLL
+        void free_buffer(Pointer buffer);
+    }
+
+    /**
+     * Буфер з DLL: вказівник і розмір однієї серіалізації.
+     * data звільняється через free_buffer.
+     */
+    public static class NativeBuffer extends Structure implements Structure.ByValue {
+        public Pointer data;
+        public long size;
+
+        @Override
+        protected List<String> getFieldOrder() {
+            return Arrays.asList("data", "size");
+        }
     }
     
     private Pointer nativeBoc;
@@ -97,25 +114,20 @@ public class Boc implements Closeable {
             throw new IllegalStateException("Boc has been closed");
         }
         
-        // Отримуємо розмір серіалізованих даних
-        int size = CtonLibrary.INSTANCE.boc_get_serialized_size(nativeBoc, hasIdx, hashCRC);
-        if (size <= 0) {
+        NativeBuffer buffer = CtonLibrary.INSTANCE.boc_serialize(nativeBoc, hasIdx, hashCRC);
+        if (buffer == null || buffer.data == null || buffer.size <= 0) {
+            return new byte[0];
+        }
+        if (buffer.size > Integer.MAX_VALUE) {
+            CtonLibrary.INSTANCE.free_buffer(buffer.data);
             return new byte[0];
         }
         
-        // Серіалізуємо дані
-        Pointer dataPtr = CtonLibrary.INSTANCE.boc_serialize(nativeBoc, hasIdx, hashCRC);
-        if (dataPtr == null) {
-            return new byte[0];
+        try {
+            return buffer.data.getByteArray(0, (int) buffer.size);
+        } finally {
+            CtonLibrary.INSTANCE.free_buffer(buffer.data);
         }
-        
-        // Конвертуємо Pointer в byte[]
-        byte[] result = dataPtr.getByteArray(0, size);
-        
-        // Звільняємо пам'ять, виділену в C++
-        Native.free(Pointer.nativeValue(dataPtr));
-        
-        return result;
     }
     
     /**

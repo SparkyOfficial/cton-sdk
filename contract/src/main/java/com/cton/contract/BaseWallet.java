@@ -177,7 +177,7 @@ public abstract class BaseWallet implements Wallet {
         // Виконуємо get-метод seqno
         // Выполняем get-метод seqno
         // Execute seqno get-method
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         JsonObject result = runGetMethod("seqno", stack);
         
         // Перевіряємо чи є результат
@@ -220,7 +220,7 @@ public abstract class BaseWallet implements Wallet {
         // Виконуємо get-метод get_version
         // Выполняем get-метод get_version
         // Execute get_version get-method
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         JsonObject result = runGetMethod("get_version", stack);
         
         // Перевіряємо чи є результат
@@ -265,7 +265,7 @@ public abstract class BaseWallet implements Wallet {
      * @return результат виконання методу
      * @throws IOException якщо сталася помилка мережі
      */
-    protected JsonObject runGetMethod(String method, JsonObject stack) throws IOException {
+    protected JsonObject runGetMethod(String method, JsonArray stack) throws IOException {
         return apiClient.runGetMethod(address.toRaw(), method, stack);
     }
     

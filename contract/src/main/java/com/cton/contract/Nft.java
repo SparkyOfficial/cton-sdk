@@ -37,7 +37,7 @@ public class Nft extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public JsonObject getNftData() throws IOException {
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         return runGetMethod("get_nft_data", stack);
     }
     

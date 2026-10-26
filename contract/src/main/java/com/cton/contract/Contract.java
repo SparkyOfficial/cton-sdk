@@ -13,6 +13,7 @@ import com.cton.sdk.Address;
 import com.cton.sdk.Cell;
 import com.cton.sdk.CellBuilder;
 import com.cton.sdk.Crypto;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -74,7 +75,7 @@ public abstract class Contract {
      * @return результат виконання методу
      * @throws IOException якщо сталася помилка мережі
      */
-    protected JsonObject runGetMethod(String method, JsonObject stack) throws IOException {
+    protected JsonObject runGetMethod(String method, JsonArray stack) throws IOException {
         return apiClient.runGetMethod(address.toRaw(), method, stack);
     }
     

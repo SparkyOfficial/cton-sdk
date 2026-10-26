@@ -5,6 +5,7 @@
 
 package com.cton.api;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,7 +57,7 @@ public class TonApiClientComprehensiveTest {
         // Test running get-method
         String address = "0:779dcc85521e5fc8d5f3cbf718303297f066a787deb92152043b70231d365e1a";
         String method = "seqno";
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         // Порожній стек для seqno методу
         // Пустой стек для seqno метода
         // Empty stack for seqno method
@@ -152,7 +153,7 @@ public class TonApiClientComprehensiveTest {
         // Test asynchronous running get-method
         String address = "0:779dcc85521e5fc8d5f3cbf718303297f066a787deb92152043b70231d365e1a";
         String method = "seqno";
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         
         CompletableFuture<JsonObject> future = client.runGetMethodAsync(address, method, stack);
         

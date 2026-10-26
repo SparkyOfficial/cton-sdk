@@ -50,6 +50,10 @@ void free_string_array(char** strArray) {
     }
 }
 
+void free_buffer(void* buffer) {
+    free(buffer);
+}
+
 // Cell functions
 void* cell_create() {
     try {
@@ -1073,42 +1077,35 @@ void boc_destroy(void* boc) {
     }
 }
 
-void* boc_serialize(void* boc, bool hasIdx, bool hashCRC) {
+CtonBuffer boc_serialize(void* boc, bool hasIdx, bool hashCRC) {
+    CtonBuffer buffer = {nullptr, -1};
     if (!boc) {
-        return nullptr;
+        return buffer;
     }
     
     try {
         std::vector<uint8_t> data = static_cast<Boc*>(boc)->serialize(hasIdx, hashCRC);
-        
-        // Allocate memory for the serialized data and copy it
-        uint8_t* result = (uint8_t*)malloc(data.size());
-        if (result) {
-            std::memcpy(result, data.data(), data.size());
+        buffer.size = static_cast<int64_t>(data.size());
+        if (data.empty()) {
+            buffer.size = 0;
+            return buffer;
         }
-        return result;
+        
+        buffer.data = static_cast<uint8_t*>(malloc(data.size()));
+        if (!buffer.data) {
+            buffer.size = -1;
+            return buffer;
+        }
+        std::memcpy(buffer.data, data.data(), data.size());
+        return buffer;
     } catch (const std::bad_alloc&) {
-        // Handle memory allocation failure
-        return nullptr;
+        buffer.data = nullptr;
+        buffer.size = -1;
+        return buffer;
     } catch (...) {
-        return nullptr;
-    }
-}
-
-int boc_get_serialized_size(void* boc, bool hasIdx, bool hashCRC) {
-    if (!boc) {
-        return -1;
-    }
-    
-    try {
-        std::vector<uint8_t> data = static_cast<Boc*>(boc)->serialize(hasIdx, hashCRC);
-        return static_cast<int>(data.size());
-    } catch (const std::exception&) {
-        // Handle standard exceptions
-        return -1;
-    } catch (...) {
-        // Handle any other unexpected exceptions
-        return -1;
+        buffer.data = nullptr;
+        buffer.size = -1;
+        return buffer;
     }
 }
 

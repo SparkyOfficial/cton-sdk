@@ -377,8 +377,11 @@ namespace cton {
             throw std::runtime_error("Failed to create EVP cipher context");
         }
         
-        // Initialize encryption
-        if (EVP_EncryptInit_ex(ctx, EVP_chacha20(), nullptr, key.data(), nonce.data()) != 1) {
+        // EVP_chacha20() читає 16 байт IV: 4 байти лічильника (0) і 12 байт nonce.
+        // Коротший буфер змушує OpenSSL прочитати 4 байти за межею nonce.
+        uint8_t iv[16] = {0, 0, 0, 0};
+        std::memcpy(iv + 4, nonce.data(), 12);
+        if (EVP_EncryptInit_ex(ctx, EVP_chacha20(), nullptr, key.data(), iv) != 1) {
             EVP_CIPHER_CTX_free(ctx);
             throw std::runtime_error("Failed to initialize ChaCha20 encryption");
         }

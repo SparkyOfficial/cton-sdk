@@ -9,6 +9,7 @@ import java.io.IOException;
 
 import com.cton.api.liteclient.LiteClient;
 import com.cton.api.liteclient.TonProxyApiClient;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 /**
@@ -39,7 +40,7 @@ public class LiteClientExample {
                 // Выполняем get-метод смарт-контракта
                 // Execute smart contract get-method
                 System.out.println("Running get-method...");
-                JsonObject stack = new JsonObject();
+                JsonArray stack = new JsonArray();
                 JsonObject result = client.runGetMethod(
                     "EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N", 
                     "get_balance", 

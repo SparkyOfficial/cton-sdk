@@ -11,8 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import com.cton.sdk.Address;
-import com.cton.sdk.Cell;
 import com.cton.sdk.Crypto;
 
 /**
@@ -46,7 +44,7 @@ public class WalletConnect {
         // For real implementation, this would create a Wallet Connect URI
         // В реальной реализации здесь должно быть создание URI для Wallet Connect
         
-        return "wc:" + sessionId + "@1?bridge=https://bridge.walletconnect.org&key=" + generateRandomKey();
+        throw new UnsupportedOperationException("WalletConnect v2 relay is not implemented");
     }
     
     /**
@@ -94,32 +92,8 @@ public class WalletConnect {
      * @return відповідь
      */
     private WalletConnectResponse handleSendTransactionRequest(WalletConnectRequest request) {
-        try {
-            Map<String, Object> params = request.getParams();
-            
-            // Отримуємо параметри транзакції
-            String toAddress = (String) params.get("to");
-            String amountStr = (String) params.get("amount");
-            String comment = (String) params.get("comment");
-            
-            Address destination = new Address(toAddress);
-            BigInteger amount = new BigInteger(amountStr);
-            
-            // Створюємо транзакцію
-            Cell transaction = wallet.createTransfer(destination, amount, comment);
-            
-            // У реальній реалізації тут має бути підпис транзакції та її відправка
-            // For real implementation, this would sign and send the transaction
-            // В реальной реализации здесь должна быть подпись транзакции и её отправка
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("status", "Transaction created (not sent in this example)");
-            result.put("transaction", transaction.toString());
-            
-            return new WalletConnectResponse(request.getId(), true, null, result);
-        } catch (Exception e) {
-            return new WalletConnectResponse(request.getId(), false, "Failed to create transaction: " + e.getMessage(), null);
-        }
+        return new WalletConnectResponse(request.getId(), false,
+            "WalletConnect v2 relay is not implemented", null);
     }
     
     /**
@@ -128,22 +102,8 @@ public class WalletConnect {
      * @return відповідь
      */
     private WalletConnectResponse handleSignRequest(WalletConnectRequest request) {
-        try {
-            Map<String, Object> params = request.getParams();
-            String dataToSign = (String) params.get("data");
-            
-            // У реальній реалізації тут має бути підпис даних
-            // For real implementation, this would sign the data
-            // В реальной реализации здесь должна быть подпись данных
-            
-            Map<String, Object> result = new HashMap<>();
-            result.put("signature", "signature_placeholder");
-            result.put("data", dataToSign);
-            
-            return new WalletConnectResponse(request.getId(), true, null, result);
-        } catch (Exception e) {
-            return new WalletConnectResponse(request.getId(), false, "Failed to sign data: " + e.getMessage(), null);
-        }
+        return new WalletConnectResponse(request.getId(), false,
+            "WalletConnect v2 relay is not implemented", null);
     }
     
     /**
@@ -158,12 +118,8 @@ public class WalletConnect {
             return new WalletConnectResponse(requestId, false, "Request not found", null);
         }
         
-        // У реальній реалізації тут має бути підпис запиту приватним ключем
-        // For real implementation, this would sign the request with private key
-        // В реальной реализации здесь должна быть подпись запроса приватным ключом
-        
-        pendingRequests.remove(requestId);
-        return new WalletConnectResponse(requestId, true, null, Map.of("status", "approved"));
+        return new WalletConnectResponse(requestId, false,
+            "WalletConnect v2 relay is not implemented", null);
     }
     
     /**
@@ -197,18 +153,6 @@ public class WalletConnect {
      */
     public String getSessionId() {
         return sessionId;
-    }
-    
-    /**
-     * Згенерувати випадковий ключ (для прикладу)
-     * @return випадковий ключ
-     */
-    private String generateRandomKey() {
-        // У реальній реалізації тут має бути генерація справжнього криптографічного ключа
-        // For real implementation, this would generate a real cryptographic key
-        // В реальной реализации здесь должна быть генерация настоящего криптографического ключа
-        
-        return "random_key_for_example";
     }
     
     /**

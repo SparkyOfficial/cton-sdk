@@ -7,7 +7,9 @@ package com.cton.contract;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import java.time.Instant;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
 
 import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
@@ -55,58 +57,43 @@ public class HighloadWallet extends BaseWallet {
     
     @Override
     public Cell createBulkTransfer(BulkTransfer[] transfers) throws IOException {
-        // Створюємо комірку з багатьма транзакціями
-        CellBuilder builder = new CellBuilder();
-        
-        // Додаємо ідентифікатор підкошелька
-        builder.storeUInt(32, this.subwalletId);
-        
-        // Додаємо час закінчення дії (expire_at) - поточний час + 1 година
-        long expireAt = Instant.now().getEpochSecond() + 3600;
-        builder.storeUInt(32, expireAt);
-        
-        // Створюємо комірку для транзакцій
-        CellBuilder transferBuilder = new CellBuilder();
-        
-        // Додаємо транзакції (до 254 транзакцій)
-        for (int i = 0; i < Math.min(transfers.length, 254); i++) {
-            BulkTransfer transfer = transfers[i];
-            
-            // Додаємо індекс транзакції
-            transferBuilder.storeUInt(16, i);
-            
-            // Додаємо режим транзакції
-            transferBuilder.storeUInt(8, transfer.getMode());
-            
-            // Створюємо комірку для транзакції
-            CellBuilder txBuilder = new CellBuilder();
-            
-            // Додаємо адресу одержувача
-            txBuilder.storeAddress(transfer.getDestination());
-            
-            // Додаємо суму
-            txBuilder.storeCoins(transfer.getAmount());
-            
-            // Додаємо коментар якщо він є
-            if (transfer.getComment() != null && !transfer.getComment().isEmpty()) {
-                CellBuilder commentBuilder = new CellBuilder();
-                commentBuilder.storeUInt(32, 0); // Текст коментаря
-                commentBuilder.storeBytes(transfer.getComment().getBytes());
-                txBuilder.storeRef(commentBuilder.build());
-            } else {
-                // Порожній ref для коментаря
-                txBuilder.storeRef(new CellBuilder().build());
-            }
-            
-            // Додаємо транзакцію до комірки транзакцій
-            transferBuilder.storeRef(txBuilder.build());
+        if (transfers == null || transfers.length == 0) {
+            throw new IllegalArgumentException("At least one transfer is required");
         }
-        
-        // Додаємо комірку транзакцій
-        builder.storeRef(transferBuilder.build());
-        
-        // Додаємо підпис (буде додано під час відправки)
+        if (transfers.length > 254) {
+            throw new IllegalArgumentException("Highload Wallet v2 accepts at most 254 transfers");
+        }
+
+        // highload-wallet-v2: subwallet_id:uint32 query_id:uint64 messages:(HashmapE 16 Message)
+        // Message = mode:uint8 ^internal. query_id має бути не менший за now()<<32.
+        CellBuilder builder = new CellBuilder();
+        builder.storeUInt(32, this.subwalletId);
+        long queryId = (getValidUntil() << 32) | (System.nanoTime() & 0xffffffffL);
+        builder.storeUInt(64, queryId);
+
+        List<HashmapE.Entry> messages = new ArrayList<>(transfers.length);
+        for (int i = 0; i < transfers.length; i++) {
+            BulkTransfer transfer = transfers[i];
+            Cell body = commentBody(transfer.getComment());
+            Cell message = buildInternalMessage(
+                transfer.getDestination(), transfer.getAmount(), body, true);
+            int mode = transfer.getMode();
+            messages.add(new HashmapE.Entry(i, value -> {
+                value.storeUInt(8, mode);
+                value.storeRef(message);
+            }));
+        }
+        HashmapE.store(builder, 16, messages);
         return builder.build();
+    }
+
+    private static Cell commentBody(String comment) {
+        CellBuilder body = new CellBuilder();
+        body.storeUInt(32, 0);
+        if (comment != null && !comment.isEmpty()) {
+            body.storeBytes(comment.getBytes(StandardCharsets.UTF_8));
+        }
+        return body.build();
     }
     
     @Override

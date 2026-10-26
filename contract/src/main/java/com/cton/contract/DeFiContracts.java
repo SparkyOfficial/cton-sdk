@@ -10,8 +10,6 @@ import java.math.BigInteger;
 
 import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
-import com.cton.sdk.Cell;
-import com.cton.sdk.CellBuilder;
 import com.cton.sdk.Crypto;
 
 /**
@@ -44,34 +42,7 @@ public class DeFiContracts extends Contract {
      */
     public void addLiquidity(BigInteger token0Amount, BigInteger token1Amount,
                             Wallet wallet, Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для додавання ліквідності
-        // Создаем ячейку с телом сообщения для добавления ликвидности
-        // Create cell with message body for adding liquidity
-        CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для додавання ліквідності (0x12345679)
-        // Добавляем opcode для добавления ликвидности (0x12345679)
-        // Add opcode for adding liquidity (0x12345679)
-        bodyBuilder.storeUInt(32, 0x12345679);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
-        bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо кількість токенів першого типу
-        // Добавляем количество токенов первого типа
-        // Add amount of first token type
-        bodyBuilder.storeCoins(token0Amount);
-        
-        // Додаємо кількість токенів другого типу
-        // Добавляем количество токенов второго типа
-        // Add amount of second token type
-        bodyBuilder.storeCoins(token1Amount);
-        
-        Cell body = bodyBuilder.build();
-        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
-        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
+        refusePlaceholderOpcode();
     }
     
     /**
@@ -86,29 +57,7 @@ public class DeFiContracts extends Contract {
      */
     public void removeLiquidity(BigInteger liquidityAmount, Wallet wallet,
                                Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для видалення ліквідності
-        // Создаем ячейку с телом сообщения для удаления ликвидности
-        // Create cell with message body for removing liquidity
-        CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для видалення ліквідності (0x98765432)
-        // Добавляем opcode для удаления ликвидности (0x98765432)
-        // Add opcode for removing liquidity (0x98765432)
-        bodyBuilder.storeUInt(32, 0x98765432);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
-        bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо кількість ліквідних токенів для видалення
-        // Добавляем количество ликвидных токенов для удаления
-        // Add amount of liquidity tokens to remove
-        bodyBuilder.storeCoins(liquidityAmount);
-        
-        Cell body = bodyBuilder.build();
-        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
-        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
+        refusePlaceholderOpcode();
     }
     
     /**
@@ -123,29 +72,7 @@ public class DeFiContracts extends Contract {
      */
     public void stakeTokens(BigInteger amount, Wallet wallet,
                            Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для стейкінгу
-        // Создаем ячейку с телом сообщения для стейкинга
-        // Create cell with message body for staking
-        CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для стейкінгу (0x11111111)
-        // Добавляем opcode для стейкинга (0x11111111)
-        // Add opcode for staking (0x11111111)
-        bodyBuilder.storeUInt(32, 0x11111111);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
-        bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо кількість токенів для стейкінгу
-        // Добавляем количество токенов для стейкинга
-        // Add amount of tokens to stake
-        bodyBuilder.storeCoins(amount);
-        
-        Cell body = bodyBuilder.build();
-        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
-        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
+        refusePlaceholderOpcode();
     }
     
     /**
@@ -160,29 +87,7 @@ public class DeFiContracts extends Contract {
      */
     public void unstakeTokens(BigInteger amount, Wallet wallet,
                              Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для виведення стейкінгу
-        // Создаем ячейку с телом сообщения для вывода стейкинга
-        // Create cell with message body for unstaking
-        CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для виведення стейкінгу (0x22222222)
-        // Добавляем opcode для вывода стейкинга (0x22222222)
-        // Add opcode for unstaking (0x22222222)
-        bodyBuilder.storeUInt(32, 0x22222222);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
-        bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо кількість токенів для виведення
-        // Добавляем количество токенов для вывода
-        // Add amount of tokens to withdraw
-        bodyBuilder.storeCoins(amount);
-        
-        Cell body = bodyBuilder.build();
-        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
-        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
+        refusePlaceholderOpcode();
     }
     
     /**
@@ -198,34 +103,7 @@ public class DeFiContracts extends Contract {
      */
     public void takeLoan(BigInteger collateralAmount, BigInteger loanAmount,
                         Wallet wallet, Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для взяття кредиту
-        // Создаем ячейку с телом сообщения для взятия кредита
-        // Create cell with message body for taking a loan
-        CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для взяття кредиту (0x33333333)
-        // Добавляем opcode для взятия кредита (0x33333333)
-        // Add opcode for taking a loan (0x33333333)
-        bodyBuilder.storeUInt(32, 0x33333333);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
-        bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо кількість токенів в якості застави
-        // Добавляем количество токенов в качестве залога
-        // Add amount of tokens as collateral
-        bodyBuilder.storeCoins(collateralAmount);
-        
-        // Додаємо кількість токенів для позики
-        // Добавляем количество токенов для кредита
-        // Add amount of tokens for loan
-        bodyBuilder.storeCoins(loanAmount);
-        
-        Cell body = bodyBuilder.build();
-        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
-        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
+        refusePlaceholderOpcode();
     }
     
     /**
@@ -240,28 +118,10 @@ public class DeFiContracts extends Contract {
      */
     public void repayLoan(BigInteger repaymentAmount, Wallet wallet,
                          Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для погашення кредиту
-        // Создаем ячейку с телом сообщения для погашения кредита
-        // Create cell with message body for repaying a loan
-        CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для погашення кредиту (0x44444444)
-        // Добавляем opcode для погашения кредита (0x44444444)
-        // Add opcode for repaying a loan (0x44444444)
-        bodyBuilder.storeUInt(32, 0x44444444);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
-        bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо кількість токенів для погашення
-        // Добавляем количество токенов для погашения
-        // Add amount of tokens for repayment
-        bodyBuilder.storeCoins(repaymentAmount);
-        
-        Cell body = bodyBuilder.build();
-        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
-        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
+        refusePlaceholderOpcode();
+    }
+
+    private static void refusePlaceholderOpcode() throws IOException {
+        throw new IOException("This call was not sent. The SDK has no STON.fi or DeDust message schema, so it does not broadcast a placeholder opcode.");
     }
 }

@@ -39,7 +39,7 @@ public class Jetton extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public BigInteger getTotalSupply() throws IOException {
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         JsonObject result = runGetMethod("get_jetton_data", stack);
         
         // Перевіряємо чи є результат
@@ -83,7 +83,7 @@ public class Jetton extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public Address getJettonMinter() throws IOException {
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         JsonObject result = runGetMethod("get_jetton_data", stack);
         
         // Перевіряємо чи є результат
@@ -128,14 +128,11 @@ public class Jetton extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public BigInteger getBalance(Address owner) throws IOException {
-        JsonObject stack = new JsonObject();
-        // Додаємо адресу власника до стеку
-        // Добавляем адрес владельца в стек
-        // Add owner address to stack
-        JsonArray ownerArray = new JsonArray();
-        ownerArray.add("tvm.Slice");
-        ownerArray.add(owner.toRaw());
-        stack.add("address", ownerArray);
+        JsonArray stack = new JsonArray();
+        JsonArray ownerItem = new JsonArray();
+        ownerItem.add("tvm.Slice");
+        ownerItem.add(owner.toRaw());
+        stack.add(ownerItem);
         
         JsonObject result = runGetMethod("get_wallet_data", stack);
         
@@ -181,14 +178,11 @@ public class Jetton extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public Address getWalletAddress(Address owner) throws IOException {
-        JsonObject stack = new JsonObject();
-        // Додаємо адресу власника до стеку
-        // Добавляем адрес владельца в стек
-        // Add owner address to stack
-        JsonArray ownerArray = new JsonArray();
-        ownerArray.add("tvm.Slice");
-        ownerArray.add(owner.toRaw());
-        stack.add("address", ownerArray);
+        JsonArray stack = new JsonArray();
+        JsonArray ownerItem = new JsonArray();
+        ownerItem.add("tvm.Slice");
+        ownerItem.add(owner.toRaw());
+        stack.add(ownerItem);
         
         JsonObject result = runGetMethod("get_wallet_address", stack);
         

@@ -112,12 +112,17 @@ extern "C" {
     CTON_SDK_CORE_API bool mnemonic_is_valid_ton(char** mnemonic);
     CTON_SDK_CORE_API int mnemonic_to_ton_seed(char** mnemonic, uint8_t* out, int outLen);
 
+    // Буфер, виділений malloc у цій DLL. Звільняти лише через free_buffer.
+    struct CtonBuffer {
+        uint8_t* data;
+        int64_t size;
+    };
+
     // BOC functions
     CTON_SDK_CORE_API void* boc_create();
     CTON_SDK_CORE_API void* boc_create_with_root(void* rootCell);
     CTON_SDK_CORE_API void boc_destroy(void* boc);
-    CTON_SDK_CORE_API void* boc_serialize(void* boc, bool hasIdx, bool hashCRC);
-    CTON_SDK_CORE_API int boc_get_serialized_size(void* boc, bool hasIdx, bool hashCRC);  // New function
+    CTON_SDK_CORE_API CtonBuffer boc_serialize(void* boc, bool hasIdx, bool hashCRC);
     CTON_SDK_CORE_API void* boc_deserialize(const uint8_t* data, int length);
     CTON_SDK_CORE_API void* boc_get_root(void* boc);
     CTON_SDK_CORE_API void boc_set_root(void* boc, void* rootCell);
@@ -125,6 +130,7 @@ extern "C" {
     // Memory management functions
     CTON_SDK_CORE_API void free_string(char* str);
     CTON_SDK_CORE_API void free_string_array(char** strArray);
+    CTON_SDK_CORE_API void free_buffer(void* buffer);
 }
 
 #endif // CTON_SDK_CORE_NATIVE_INTERFACE_H

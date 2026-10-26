@@ -102,6 +102,9 @@ public class Crypto {
         
         // Функція для звільнення масиву рядків
         void free_string_array(Pointer strArray);
+
+        // Звільнити буфер, виділений malloc у DLL
+        void free_buffer(Pointer buffer);
     }
     
     /**
@@ -476,12 +479,7 @@ public class Crypto {
             // For ChaCha20, the output size is the same as the input size
             byte[] result = resultPtr.getByteArray(0, data.length);
             
-            // Free the memory allocated in C++
-            try {
-                Native.free(Pointer.nativeValue(resultPtr));
-            } catch (Exception e) {
-                // Ignore errors during memory freeing
-            }
+            CtonLibrary.INSTANCE.free_buffer(resultPtr);
             
             return result;
         }
@@ -505,8 +503,7 @@ public class Crypto {
         if (signaturePtr != null) {
             // Convert Pointer to byte[]
             byte[] signature = signaturePtr.getByteArray(0, 64);
-            // Free memory allocated in C++
-            Native.free(Pointer.nativeValue(signaturePtr));
+            CtonLibrary.INSTANCE.free_buffer(signaturePtr);
             return signature;
         } else {
             // У випадку помилки повертаємо порожній масив
@@ -548,8 +545,7 @@ public class Crypto {
         if (signaturePtr != null) {
             // Convert Pointer to byte[]
             byte[] signature = signaturePtr.getByteArray(0, 64);
-            // Free memory allocated in C++
-            Native.free(Pointer.nativeValue(signaturePtr));
+            CtonLibrary.INSTANCE.free_buffer(signaturePtr);
             return signature;
         } else {
             // У випадку помилки повертаємо порожній масив

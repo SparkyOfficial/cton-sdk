@@ -54,9 +54,11 @@ public class HardwareWalletExample {
             int accountIndex = hardwareWallet.getAccountIndex();
             System.out.println("Account index: " + accountIndex);
             
-            // Отримуємо адресу з пристрою
-            Address deviceAddress = hardwareWallet.getAddressFromDevice();
-            System.out.println("Address from device: " + deviceAddress.toRaw());
+            try {
+                hardwareWallet.getAddressFromDevice();
+            } catch (IOException e) {
+                System.out.println("Address from device: " + e.getMessage());
+            }
             
             // Отримуємо баланс
             BigInteger balance = hardwareWallet.getBalance();
@@ -70,17 +72,16 @@ public class HardwareWalletExample {
             com.cton.sdk.Cell transaction = hardwareWallet.createTransfer(recipient, amount, comment);
             System.out.println("Transaction created");
             
-            // Підписуємо транзакцію на пристрої
-            com.cton.sdk.Cell signedTransaction = hardwareWallet.signTransactionOnDevice(transaction);
-            System.out.println("Transaction signed on device");
+            try {
+                hardwareWallet.signTransactionOnDevice(transaction);
+            } catch (IOException e) {
+                System.out.println("Device signing: " + e.getMessage());
+            }
             
             // У реальній реалізації тут має бути відправка підписаної транзакції
             // In real implementation, signed transaction should be sent here
             
-            System.out.println("\nTo send a transaction with hardware wallet:");
-            System.out.println("1. Create transaction using hardwareWallet.createTransfer()");
-            System.out.println("2. Sign it on device using hardwareWallet.signTransactionOnDevice()");
-            System.out.println("3. Send it using hardwareWallet.sendTransaction()");
+            System.out.println("\nDevice transport is not implemented, so the transfer stays unsigned.");
             
             // Отримуємо список підтримуваних пристроїв
             List<String> supportedDevices = HardwareWallet.getSupportedDevices();

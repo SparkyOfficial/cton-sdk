@@ -5,12 +5,13 @@
 
 package com.cton.contract;
 
+import java.io.IOException;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -100,7 +101,7 @@ public class HardwareWalletTest {
             "device_12345"
         );
         
-        assertTrue(hardwareWallet.isDeviceConnected());
+        assertFalse(hardwareWallet.isDeviceConnected());
     }
     
     @Test
@@ -112,10 +113,7 @@ public class HardwareWalletTest {
         List<String> supportedDevices = HardwareWallet.getSupportedDevices();
         
         assertNotNull(supportedDevices);
-        assertFalse(supportedDevices.isEmpty());
-        assertTrue(supportedDevices.contains("Ledger"));
-        assertTrue(supportedDevices.contains("Trezor"));
-        assertTrue(supportedDevices.contains("Keystone"));
+        assertTrue(supportedDevices.isEmpty());
     }
     
     @Test
@@ -180,9 +178,8 @@ public class HardwareWalletTest {
             "device_12345"
         );
         
-        Address address = hardwareWallet.getAddressFromDevice();
-        assertNotNull(address);
-        assertSame(walletAddress, address);
+        IOException error = assertThrows(IOException.class, hardwareWallet::getAddressFromDevice);
+        assertTrue(error.getMessage().contains("was not read from a device"));
     }
     
     @Test

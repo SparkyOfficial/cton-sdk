@@ -54,14 +54,7 @@ public class HardwareWallet extends BaseWallet {
     
     @Override
     public Cell createTransfer(Address destination, BigInteger amount, String comment) throws IOException {
-        // Створюємо звичайну транзакцію
-        Cell transaction = super.createTransfer(destination, amount, comment);
-        
-        // Для апаратного кошелька додаємо спеціальні маркери
-        // For hardware wallet, add special markers
-        // Для аппаратного кошелька добавляем специальные маркеры
-        
-        return transaction;
+        return super.createTransfer(destination, amount, comment);
     }
     
     /**
@@ -71,29 +64,7 @@ public class HardwareWallet extends BaseWallet {
      * @throws IOException якщо сталася помилка
      */
     public Cell signTransactionOnDevice(Cell transaction) throws IOException {
-        // У реальній реалізації тут має бути взаємодія з апаратним пристроєм
-        // For real implementation, this would interact with the hardware device
-        // В реальной реализации здесь должно быть взаимодействие с аппаратным устройством
-        
-        // Симуляція підпису на апаратному пристрої
-        // Simulation of signing on hardware device
-        // Симуляция подписи на аппаратном устройстве
-        
-        System.out.println("Please confirm transaction on your " + deviceType + " device...");
-        
-        // У реальній реалізації тут має бути очікування підтвердження користувача
-        // For real implementation, this would wait for user confirmation
-        // В реальной реализации здесь должно быть ожидание подтверждения пользователя
-        
-        try {
-            Thread.sleep(1000); // Імітація очікування / Simulation of waiting
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-        
-        System.out.println("Transaction confirmed on " + deviceType + " device");
-        
-        return transaction;
+        throw new IOException("Hardware wallet transport is not implemented. The transaction was not signed.");
     }
     
     /**
@@ -102,17 +73,7 @@ public class HardwareWallet extends BaseWallet {
      * @throws IOException якщо сталася помилка
      */
     public Address getAddressFromDevice() throws IOException {
-        // У реальній реалізації тут має бути отримання адреси з апаратного пристрою
-        // For real implementation, this would get address from hardware device
-        // В реальной реализации здесь должно быть получение адреса с аппаратного устройства
-        
-        System.out.println("Please confirm address request on your " + deviceType + " device...");
-        
-        // У реальній реалізації тут має бути очікування підтвердження користувача
-        // For real implementation, this would wait for user confirmation
-        // В реальной реализации здесь должно быть ожидание подтверждения пользователя
-        
-        return getAddress();
+        throw new IOException("Hardware wallet transport is not implemented. The address was not read from a device.");
     }
     
     /**
@@ -122,11 +83,6 @@ public class HardwareWallet extends BaseWallet {
      */
     @Override
     public BigInteger getBalance() throws IOException {
-        // Для апаратного кошелька можемо додати додаткову перевірку
-        // For hardware wallet, we can add additional verification
-        // Для аппаратного кошелька можем добавить дополнительную проверку
-        
-        System.out.println("Getting balance for " + deviceType + " wallet...");
         return super.getBalance();
     }
     
@@ -164,15 +120,7 @@ public class HardwareWallet extends BaseWallet {
      * @return true якщо пристрій підключено, false в іншому випадку
      */
     public boolean isDeviceConnected() {
-        // У реальній реалізації тут має бути перевірка підключення пристрою
-        // For real implementation, this would check device connection
-        // В реальной реализации здесь должна быть проверка подключения устройства
-        
-        // Симуляція підключення пристрою
-        // Simulation of device connection
-        // Симуляция подключения устройства
-        
-        return true;
+        return false;
     }
     
     /**
@@ -180,10 +128,6 @@ public class HardwareWallet extends BaseWallet {
      * @return список підтримуваних пристроїв
      */
     public static List<String> getSupportedDevices() {
-        // У реальній реалізації тут має бути список підтримуваних пристроїв
-        // For real implementation, this would be a list of supported devices
-        // В реальной реализации здесь должен быть список поддерживаемых устройств
-        
-        return List.of("Ledger", "Trezor", "Keystone");
+        return List.of();
     }
 }

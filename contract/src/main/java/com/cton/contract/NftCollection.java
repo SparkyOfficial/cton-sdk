@@ -40,7 +40,7 @@ public class NftCollection extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public JsonObject getCollectionData() throws IOException {
-        JsonObject stack = new JsonObject();
+        JsonArray stack = new JsonArray();
         return runGetMethod("get_collection_data", stack);
     }
     
@@ -184,15 +184,11 @@ public class NftCollection extends Contract {
      * @throws IOException якщо сталася помилка мережі
      */
     public Address getNftAddressByIndex(long index) throws IOException {
-        JsonObject stack = new JsonObject();
-        
-        // Додаємо індекс до стеку
-        // Добавляем индекс в стек
-        // Add index to stack
-        JsonArray indexArray = new JsonArray();
-        indexArray.add("tvm.Slice");
-        indexArray.add(String.valueOf(index));
-        stack.add("index", indexArray);
+        JsonArray stack = new JsonArray();
+        JsonArray indexItem = new JsonArray();
+        indexItem.add("num");
+        indexItem.add(String.valueOf(index));
+        stack.add(indexItem);
         
         JsonObject result = runGetMethod("get_nft_address_by_index", stack);
         
