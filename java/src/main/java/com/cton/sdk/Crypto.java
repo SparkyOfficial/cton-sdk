@@ -89,6 +89,11 @@ public class Crypto {
         // Створення приватного ключа з мнемоніки
         Pointer crypto_mnemonic_to_private_key(Pointer mnemonic);
         
+        // TON мнемоніка (сумісність з Tonkeeper/MyTonWallet/Telegram Wallet)
+        Pointer mnemonic_generate_ton(int wordCount);
+        boolean mnemonic_is_valid_ton(Pointer mnemonic);
+        int mnemonic_to_ton_seed(Pointer mnemonic, byte[] out, int outLen);
+        
         // ChaCha20 encryption
         Pointer crypto_chacha20_encrypt(byte[] data, int dataLen, byte[] key, byte[] nonce);
         
@@ -630,5 +635,88 @@ public class Crypto {
         }
         
         return new PrivateKey(privateKeyPtr);
+    }
+    
+    /**
+     * Конвертує список слів у масив C-рядків (char**), завершений null,
+     * придатний для передачі в нативні функції мнемоніки.
+     */
+    private static Memory toCStringArray(List<String> mnemonic) {
+        if (mnemonic == null || mnemonic.isEmpty()) {
+            throw new IllegalArgumentException("Mnemonic cannot be null or empty");
+        }
+        
+        String[] mnemonicArray = mnemonic.toArray(new String[0]);
+        
+        // Масив покажчиків на рядки + null-термінатор
+        Pointer[] pointers = new Pointer[mnemonicArray.length + 1];
+        for (int i = 0; i < mnemonicArray.length; i++) {
+            pointers[i] = new Memory(mnemonicArray[i].length() + 1);
+            pointers[i].setString(0, mnemonicArray[i]);
+        }
+        pointers[mnemonicArray.length] = null;
+        
+        Memory pointerArray = new Memory(pointers.length * Native.POINTER_SIZE);
+        for (int i = 0; i < pointers.length; i++) {
+            pointerArray.setPointer(i * Native.POINTER_SIZE, pointers[i]);
+        }
+        return pointerArray;
+    }
+    
+    /**
+     * Генерація TON мнемонічної фрази (Tonkeeper/MyTonWallet/Telegram Wallet).
+     * На відміну від BIP-39, використовує валідацію через HMAC та 100 000
+     * ітерацій PBKDF2 з сіллю "TON default seed".
+     * @param wordCount кількість слів (зазвичай 24)
+     * @return список слів мнемоніки
+     */
+    public static List<String> generateTonMnemonic(int wordCount) {
+        Pointer mnemonicPtr = CtonLibrary.INSTANCE.mnemonic_generate_ton(wordCount);
+        
+        List<String> result = new ArrayList<>();
+        if (mnemonicPtr == null) {
+            return result;
+        }
+        
+        int index = 0;
+        Pointer stringPtr;
+        while ((stringPtr = mnemonicPtr.getPointer(index * Native.POINTER_SIZE)) != null) {
+            result.add(stringPtr.getString(0));
+            index++;
+        }
+        
+        CtonLibrary.INSTANCE.free_string_array(mnemonicPtr);
+        
+        return result;
+    }
+    
+    /**
+     * Перевірка валідності TON мнемонічної фрази.
+     * @param mnemonic мнемонічна фраза (список слів)
+     * @return true якщо фраза валідна за стандартом TON
+     */
+    public static boolean isValidTonMnemonic(List<String> mnemonic) {
+        try {
+            Memory pointerArray = toCStringArray(mnemonic);
+            return CtonLibrary.INSTANCE.mnemonic_is_valid_ton(pointerArray);
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+    
+    /**
+     * Отримання TON seed з мнемонічної фрази (PBKDF2-HMAC-SHA512,
+     * сіль "TON default seed", 100 000 ітерацій).
+     * @param mnemonic мнемонічна фраза
+     * @return 64-байтовий seed
+     */
+    public static byte[] mnemonicToTonSeed(List<String> mnemonic) {
+        Memory pointerArray = toCStringArray(mnemonic);
+        byte[] seed = new byte[64];
+        int result = CtonLibrary.INSTANCE.mnemonic_to_ton_seed(pointerArray, seed, seed.length);
+        if (result != 64) {
+            throw new RuntimeException("Failed to derive TON seed from mnemonic");
+        }
+        return seed;
     }
 }

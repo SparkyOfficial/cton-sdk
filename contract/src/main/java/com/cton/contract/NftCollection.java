@@ -10,7 +10,6 @@ import java.util.List;
 
 import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
-import com.cton.sdk.Boc;
 import com.cton.sdk.Cell;
 import com.cton.sdk.CellBuilder;
 import com.cton.sdk.Crypto;
@@ -233,98 +232,38 @@ public class NftCollection extends Contract {
     }
     
     /**
-     * Масове створення NFT (mint)
-     * @param owner адреса власника
+     * Масове створення NFT. Кожен мінт — окреме внутрішнє повідомлення з гаманця мінтера.
+     *
+     * @param minterWallet гаманець V3/V4 власника колекції, який сплачує газ
+     * @param owner адреса власника нових NFT
      * @param contents список контенту для кожного NFT
-     * @param privateKey приватний ключ для підпису
-     * @throws IOException якщо сталася помилка мережі
+     * @param privateKey ключ гаманця мінтера
      */
-    public void batchMint(Address owner, List<Cell> contents, Crypto.PrivateKey privateKey) throws IOException {
-        // Отримуємо поточний індекс для наступного NFT
-        // Получаем текущий индекс для следующего NFT
-        // Get current index for next NFT
+    public void batchMint(Wallet minterWallet, Address owner, List<Cell> contents, Crypto.PrivateKey privateKey) throws IOException {
         long startIndex = getNextItemIndex();
-        
-        // Створюємо список транзакцій для масового мінтингу
-        // Создаем список транзакций для массового минтинга
-        // Create list of transactions for batch minting
         for (int i = 0; i < contents.size(); i++) {
-            mintNft(owner, contents.get(i), startIndex + i, privateKey);
+            mintNft(minterWallet, owner, contents.get(i), startIndex + i, privateKey);
         }
     }
     
     /**
-     * Створення одного NFT (mint)
-     * @param owner адреса власника
+     * Мінт одного NFT. Колекція не приймає external-in: опкод 0x178d4519
+     * надсилається внутрішнім повідомленням через гаманець мінтера.
+     *
+     * @param minterWallet гаманець V3/V4 власника колекції, який сплачує газ
+     * @param owner адреса власника NFT
      * @param content контент NFT
      * @param index індекс NFT
-     * @param privateKey приватний ключ для підпису
-     * @throws IOException якщо сталася помилка мережі
+     * @param privateKey ключ гаманця мінтера
      */
-    public void mintNft(Address owner, Cell content, long index, Crypto.PrivateKey privateKey) throws IOException {
-        // Створюємо комірку з тілом повідомлення для мінтингу NFT
-        // Создаем ячейку с телом сообщения для минтинга NFT
-        // Create cell with message body for NFT minting
+    public void mintNft(Wallet minterWallet, Address owner, Cell content, long index, Crypto.PrivateKey privateKey) throws IOException {
         CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо opcode для mint (0x178d4519)
-        // Добавляем opcode для mint (0x178d4519)
-        // Add opcode for mint (0x178d4519)
         bodyBuilder.storeUInt(32, 0x178d4519);
-        
-        // Додаємо query_id (0 для простоти)
-        // Добавляем query_id (0 для простоты)
-        // Add query_id (0 for simplicity)
         bodyBuilder.storeUInt(64, 0);
-        
-        // Додаємо індекс
-        // Добавляем индекс
-        // Add index
         bodyBuilder.storeUInt(64, index);
-        
-        // Додаємо адресу власника
-        // Добавляем адрес владельца
-        // Add owner address
         bodyBuilder.storeAddress(owner);
-        
-        // Додаємо контент
-        // Добавляем контент
-        // Add content
         bodyBuilder.storeRef(content);
-        
-        Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+
+        sendThroughWallet(minterWallet, this.address, bodyBuilder.build(), DEFAULT_ATTACHED_TON, privateKey);
     }
 }

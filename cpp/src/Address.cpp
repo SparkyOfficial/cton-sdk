@@ -98,17 +98,11 @@ namespace cton {
         std::vector<uint8_t> buffer;
         buffer.reserve(36); // 1 байт tag + 1 байт workchain + 32 байти hash + 2 байти CRC
         
-        // Додаємо tag байт
-        uint8_t tag = 0x11; // Base tag for address
-        if (!isBounceable) {
-            tag |= 0x80; // Set non-bounceable bit
-        }
-        if (isTestOnly) {
-            tag |= 0x40; // Set testnet bit
-        }
-        if (workchain_ != -1) {
-            tag |= 0x20; // Set workchain bit if not -1
-        }
+        // Додаємо tag байт згідно зі специфікацією TON:
+        // 0x11 — bounceable mainnet, 0x51 — non-bounceable mainnet,
+        // 0x91 — bounceable testnet, 0xD1 — non-bounceable testnet
+        uint8_t tag = isTestOnly ? 0x80 : 0x00; // біт testnet
+        tag |= isBounceable ? 0x11 : 0x51;      // 0x80 = bounceable flag
         buffer.push_back(tag);
         
         // Додаємо workchain (1 байт)
@@ -220,12 +214,19 @@ namespace cton {
             return;
         }
         
-        // Парсимо tag байт
+        // Парсимо tag байт згідно зі специфікацією TON:
+        // 0x80 = testnet-only, 0x40 = bounceable, 0x20 = TC8 (deprecated)
         // Parse tag byte
         uint8_t tag = buffer[0];
-        bool isBounceable = (tag & 0x80) == 0;
-        bool isTestOnly = (tag & 0x40) != 0;
-        bool hasWorkchain = (tag & 0x20) != 0;
+        bool isTestOnly = (tag & 0x80) != 0;
+        bool isBounceable = (tag & 0x40) != 0;
+        // Міцна валідація: решта бітів має дорівнювати 0x11
+        if ((tag & 0x1F) != 0x11 || (tag & 0x20) != 0) {
+            valid_ = false;
+            return;
+        }
+        (void)isTestOnly;
+        (void)isBounceable;
         
         // Отримуємо workchain
         // Get workchain
@@ -239,20 +240,20 @@ namespace cton {
         valid_ = true;
     }
     
-    // Додаткова функція для обчислення CRC16-CCITT
+    // Додаткова функція для обчислення CRC16-CCITT (polynomial 0x1021, init 0xFFFF,
+    // MSB-first, без віддзеркалення) — саме така вимагається TON user-friendly address
     // Additional function for calculating CRC16-CCITT
     uint16_t Address::calculateCRC16(const uint8_t* data, size_t length) {
         uint16_t crc = 0xFFFF;
         
         for (size_t i = 0; i < length; ++i) {
-            crc ^= data[i];
+            crc ^= static_cast<uint16_t>(data[i]) << 8;
             
             for (int j = 0; j < 8; ++j) {
-                if (crc & 0x0001) {
-                    crc >>= 1;
-                    crc ^= 0xA001; // CRC-16-CCITT polynomial
+                if (crc & 0x8000) {
+                    crc = static_cast<uint16_t>((crc << 1) ^ 0x1021);
                 } else {
-                    crc >>= 1;
+                    crc = static_cast<uint16_t>(crc << 1);
                 }
             }
         }
@@ -285,16 +286,8 @@ namespace cton {
             }
         }
         
-        // Додаємо padding якщо потрібно
-        // Add padding if needed
-        // Добавляем паддинг если нужно
-        int padding = (3 - (data.size() % 3)) % 3;
-        for (int i = 0; i < padding; ++i) {
-            if (!result.empty()) {
-                result.pop_back();
-            }
-        }
-        
+        // URL-safe base64 (RFC 4648 §5) не містить padding '=' — цикл вище вже
+        // формує потрібну кількість символів, видаляти зайвого нічого.
         return result;
     }
     

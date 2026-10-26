@@ -75,14 +75,16 @@ namespace cton {
         void setRoot(std::shared_ptr<Cell> root);
         
     private:
+        friend class BocParser;
+        
         std::shared_ptr<Cell> root_;
         
         /**
-         * @brief Обчислити CRC32
+         * @brief Обчислити CRC32-C (Castagnoli), як того вимагає формат BoC TON
          * @param data дані для обчислення CRC
-         * @return значення CRC32
+         * @return значення CRC32-C
          */
-        static uint32_t calculateCRC32(const std::vector<uint8_t>& data);
+        static uint32_t calculateCRC32C(const std::vector<uint8_t>& data);
         
         /**
          * @brief Рекурсивно зібрати всі комірки в дереві

@@ -4,6 +4,7 @@
 package com.cton.sdk;
 
 import java.io.Closeable;
+import java.lang.ref.Cleaner;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -60,12 +61,17 @@ public class Address implements Closeable {
     // Сделаем поле доступным для других классов в том же пакете
     Pointer nativeAddress;
     private boolean closed = false;
+    private final Cleaner.Cleanable cleanable;
     
     /**
      * Конструктор за замовчуванням
      */
     public Address() {
         this.nativeAddress = CtonLibrary.INSTANCE.address_create();
+        if (this.nativeAddress == null) {
+            throw new OutOfMemoryError("address_create failed");
+        }
+        this.cleanable = NativeResources.track(this, nativeAddress, CtonLibrary.INSTANCE::address_destroy);
     }
     
     /**
@@ -75,6 +81,9 @@ public class Address implements Closeable {
      */
     Address(Pointer nativeAddress) {
         this.nativeAddress = nativeAddress;
+        this.cleanable = nativeAddress == null
+            ? null
+            : NativeResources.track(this, nativeAddress, CtonLibrary.INSTANCE::address_destroy);
     }
     
     /**
@@ -86,6 +95,7 @@ public class Address implements Closeable {
         if (this.nativeAddress == null) {
             throw new IllegalArgumentException("Invalid address string: " + addressStr);
         }
+        this.cleanable = NativeResources.track(this, nativeAddress, CtonLibrary.INSTANCE::address_destroy);
     }
     
     /**
@@ -189,10 +199,13 @@ public class Address implements Closeable {
      */
     @Override
     public void close() {
-        if (!closed && nativeAddress != null) {
-            CtonLibrary.INSTANCE.address_destroy(nativeAddress);
-            nativeAddress = null;
-            closed = true;
+        if (closed) {
+            return;
+        }
+        closed = true;
+        nativeAddress = null;
+        if (cleanable != null) {
+            cleanable.clean();
         }
     }
 }

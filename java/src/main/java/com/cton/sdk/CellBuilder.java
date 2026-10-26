@@ -37,6 +37,16 @@ public class CellBuilder {
     }
     
     /**
+     * Додати один біт (0 або 1)
+     * @param bit значення біта
+     * @return this для ланцюгових викликів
+     */
+    public CellBuilder storeBit(boolean bit) {
+        cell.storeUInt(1, bit ? 1 : 0);
+        return this;
+    }
+    
+    /**
      * Додати знакове ціле число до комірки
      * @param bits кількість бітів для зберігання
      * @param value значення для зберігання
@@ -88,7 +98,11 @@ public class CellBuilder {
         // Зберігаємо тип адреси (addr_std)
         // Store address type (addr_std)
         // Сохраняем тип адреса (addr_std)
-        cell.storeUInt(2, 2); // addr_std
+        cell.storeUInt(2, 2); // addr_std$10
+        
+        // Зберігаємо anycast:(Maybe Int8) — відсутній (біт 0), як у стандарті TON
+        // Store anycast:(Maybe Int8) = Nothing (single 0 bit)
+        cell.storeUInt(1, 0);
         
         // Зберігаємо workchain
         // Store workchain
@@ -109,52 +123,33 @@ public class CellBuilder {
      * @return this для ланцюгових викликів
      */
     public CellBuilder storeCoins(BigInteger amount) {
-        // Реалізація серіалізації монет в комірку
-        // Implementation of coin serialization to cell
-        // Реализация сериализации монет в ячейку
-        
-        if (amount == null || amount.compareTo(BigInteger.ZERO) < 0) {
-            // Зберігаємо нуль
-            // Store zero
-            // Сохраняем ноль
+        // Реалізація серіалізації Grams (varuint16) згідно з TL-B TON:
+        //   Grams$_ (len##4) value:(len * 8) Bits
+        // де len — кількість значущих байтів, a value — big-endian.
+        // Implementation of Grams (varuint16) per TON TL-B.
+        if (amount == null || amount.signum() <= 0) {
+            // Нульове значення: len = 0
             cell.storeUInt(4, 0);
             return this;
         }
         
-        // Визначаємо кількість байтів для зберігання
-        // Determine number of bytes to store
-        // Определяем количество байтов для хранения
-        int bitLength = amount.bitLength();
-        int bytesNeeded = (bitLength + 7) / 8;
-        
-        if (bytesNeeded == 0) {
-            // Нульове значення
-            // Zero value
-            // Нулевое значение
-            cell.storeUInt(4, 0);
-            return this;
+        // Кількість значущих байтів (big-endian, без знакового байта)
+        byte[] full = amount.toByteArray(); // може містити провідний 0x00 для додатних чисел
+        int start = 0;
+        while (start < full.length - 1 && full[start] == 0) {
+            start++;
+        }
+        int len = full.length - start;
+        if (len > 15) {
+            throw new IllegalArgumentException("Coins value too large for Grams (max 15 bytes)");
         }
         
-        // Обчислюємо кількість байтів для кодування
-        // Calculate number of bytes for encoding
-        // Вычисляем количество байтов для кодирования
-        int encodingBytes = Math.min(bytesNeeded, 127); // Максимум 127 байтів
+        // Довжина у байтах (4 біти)
+        cell.storeUInt(4, len);
         
-        // Зберігаємо довжину (кількість байтів)
-        // Store length (number of bytes)
-        // Сохраняем длину (количество байтов)
-        cell.storeUInt(4, encodingBytes * 2 + 1); // Непарне число для позначення наявності байтів
-        
-        // Конвертуємо в байти у форматі big-endian
-        // Convert to bytes in big-endian format
-        // Конвертируем в байты в формате big-endian
-        byte[] amountBytes = amount.toByteArray();
-        
-        // Зберігаємо байти
-        // Store bytes
-        // Сохраняем байты
-        for (int i = amountBytes.length - 1; i >= 0; i--) {
-            cell.storeUInt(8, amountBytes[i] & 0xFF);
+        // Значення big-endian
+        for (int i = start; i < full.length; i++) {
+            cell.storeUInt(8, full[i] & 0xFF);
         }
         
         return this;

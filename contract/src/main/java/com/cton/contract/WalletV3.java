@@ -43,64 +43,24 @@ public class WalletV3 extends BaseWallet {
     
     @Override
     public Cell createTransfer(Address destination, BigInteger amount, String comment) throws IOException {
-        // Отримуємо послідовний номер
-        // Получаем последовательный номер
-        // Get sequence number
-        long seqno = getSeqno();
-        
-        // Створюємо комірку з тілом повідомлення
-        // Создаем ячейку с телом сообщения
-        // Create cell with message body
+        // Wallet V3R2 виконує простий переказ як внутрішнє повідомлення (int_msg_info)
+        // з тілом op=0x0 (+ коментар). Будкуємо через стандартний конструктор BaseWallet.
         CellBuilder bodyBuilder = new CellBuilder();
-        
-        // Додаємо код операції (0 для простого переказу)
-        // Добавляем код операции (0 для простого перевода)
-        // Add operation code (0 for simple transfer)
-        bodyBuilder.storeUInt(32, 0);
-        
-        // Додаємо коментар якщо він є
-        // Добавляем комментарий если он есть
-        // Add comment if it exists
+        bodyBuilder.storeUInt(32, 0); // op code
         if (comment != null && !comment.isEmpty()) {
-            // Додаємо текст коментаря
-            // Добавляем текст комментария
-            // Add comment text
-            bodyBuilder.storeUInt(32, 0); // Текст коментаря / Текст комментария / Comment text
-            bodyBuilder.storeBytes(comment.getBytes());
+            bodyBuilder.storeBytes(comment.getBytes(java.nio.charset.StandardCharsets.UTF_8));
         }
-        
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Додаємо ідентифікатор запиту (тільки для Wallet V3+)
-        // Добавляем идентификатор запроса (только для Wallet V3+)
-        // Add request ID (only for Wallet V3+)
-        messageBuilder.storeUInt(8, 0); // expire_at (0 = no expiration)
-        
-        // Додаємо адресу одержувача
-        // Добавляем адрес получателя
-        // Add recipient address
-        messageBuilder.storeAddress(destination);
-        
-        // Додаємо суму
-        // Добавляем сумму
-        // Add amount
-        messageBuilder.storeCoins(amount);
-        
-        // Додаємо тіло повідомлення
-        // Добавляем тело сообщения
-        // Add message body
-        messageBuilder.storeRef(body);
-        
-        return messageBuilder.build();
+        return buildInternalMessage(destination, amount, body, true);
     }
     
     @Override
     public int getVersion() throws IOException {
         return 3;
+    }
+    
+    @Override
+    public int getSubwalletId() throws IOException {
+        return this.subwalletId;
     }
 }

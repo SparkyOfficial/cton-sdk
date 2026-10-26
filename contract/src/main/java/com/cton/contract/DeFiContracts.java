@@ -10,7 +10,6 @@ import java.math.BigInteger;
 
 import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
-import com.cton.sdk.Boc;
 import com.cton.sdk.Cell;
 import com.cton.sdk.CellBuilder;
 import com.cton.sdk.Crypto;
@@ -39,12 +38,12 @@ public class DeFiContracts extends Contract {
      * 
      * @param token0Amount кількість токенів першого типу
      * @param token1Amount кількість токенів другого типу
-     * @param liquidityWalletAddress адреса кошелька ліквідності
-     * @param privateKey приватний ключ для підпису
+     * @param wallet гаманець V3/V4, який надсилає внутрішнє повідомлення і сплачує газ
+     * @param privateKey приватний ключ гаманця
      * @throws IOException якщо сталася помилка мережі
      */
-    public void addLiquidity(BigInteger token0Amount, BigInteger token1Amount, 
-                            Address liquidityWalletAddress, Crypto.PrivateKey privateKey) throws IOException {
+    public void addLiquidity(BigInteger token0Amount, BigInteger token1Amount,
+                            Wallet wallet, Crypto.PrivateKey privateKey) throws IOException {
         // Створюємо комірку з тілом повідомлення для додавання ліквідності
         // Создаем ячейку с телом сообщения для добавления ликвидности
         // Create cell with message body for adding liquidity
@@ -71,39 +70,8 @@ public class DeFiContracts extends Contract {
         bodyBuilder.storeCoins(token1Amount);
         
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
+        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
     }
     
     /**
@@ -112,11 +80,11 @@ public class DeFiContracts extends Contract {
      * Удалить ликвидность из пула
      * 
      * @param liquidityAmount кількість ліквідних токенів для видалення
-     * @param liquidityWalletAddress адреса кошелька ліквідності
-     * @param privateKey приватний ключ для підпису
+     * @param wallet гаманець V3/V4, який надсилає внутрішнє повідомлення і сплачує газ
+     * @param privateKey приватний ключ гаманця
      * @throws IOException якщо сталася помилка мережі
      */
-    public void removeLiquidity(BigInteger liquidityAmount, Address liquidityWalletAddress,
+    public void removeLiquidity(BigInteger liquidityAmount, Wallet wallet,
                                Crypto.PrivateKey privateKey) throws IOException {
         // Створюємо комірку з тілом повідомлення для видалення ліквідності
         // Создаем ячейку с телом сообщения для удаления ликвидности
@@ -139,39 +107,8 @@ public class DeFiContracts extends Contract {
         bodyBuilder.storeCoins(liquidityAmount);
         
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
+        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
     }
     
     /**
@@ -180,11 +117,11 @@ public class DeFiContracts extends Contract {
      * Стейкинг токенов
      * 
      * @param amount кількість токенів для стейкінгу
-     * @param stakingWalletAddress адреса кошелька стейкінгу
-     * @param privateKey приватний ключ для підпису
+     * @param wallet гаманець V3/V4, який надсилає внутрішнє повідомлення і сплачує газ
+     * @param privateKey приватний ключ гаманця
      * @throws IOException якщо сталася помилка мережі
      */
-    public void stakeTokens(BigInteger amount, Address stakingWalletAddress,
+    public void stakeTokens(BigInteger amount, Wallet wallet,
                            Crypto.PrivateKey privateKey) throws IOException {
         // Створюємо комірку з тілом повідомлення для стейкінгу
         // Создаем ячейку с телом сообщения для стейкинга
@@ -207,39 +144,8 @@ public class DeFiContracts extends Contract {
         bodyBuilder.storeCoins(amount);
         
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
+        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
     }
     
     /**
@@ -248,11 +154,11 @@ public class DeFiContracts extends Contract {
      * Вывести стейкинг токенов
      * 
      * @param amount кількість токенів для виведення
-     * @param stakingWalletAddress адреса кошелька стейкінгу
-     * @param privateKey приватний ключ для підпису
+     * @param wallet гаманець V3/V4, який надсилає внутрішнє повідомлення і сплачує газ
+     * @param privateKey приватний ключ гаманця
      * @throws IOException якщо сталася помилка мережі
      */
-    public void unstakeTokens(BigInteger amount, Address stakingWalletAddress,
+    public void unstakeTokens(BigInteger amount, Wallet wallet,
                              Crypto.PrivateKey privateKey) throws IOException {
         // Створюємо комірку з тілом повідомлення для виведення стейкінгу
         // Создаем ячейку с телом сообщения для вывода стейкинга
@@ -275,39 +181,8 @@ public class DeFiContracts extends Contract {
         bodyBuilder.storeCoins(amount);
         
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
+        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
     }
     
     /**
@@ -317,12 +192,12 @@ public class DeFiContracts extends Contract {
      * 
      * @param collateralAmount кількість токенів в якості застави
      * @param loanAmount кількість токенів для позики
-     * @param lendingWalletAddress адреса кошелька кредитування
-     * @param privateKey приватний ключ для підпису
+     * @param wallet гаманець V3/V4, який надсилає внутрішнє повідомлення і сплачує газ
+     * @param privateKey приватний ключ гаманця
      * @throws IOException якщо сталася помилка мережі
      */
     public void takeLoan(BigInteger collateralAmount, BigInteger loanAmount,
-                        Address lendingWalletAddress, Crypto.PrivateKey privateKey) throws IOException {
+                        Wallet wallet, Crypto.PrivateKey privateKey) throws IOException {
         // Створюємо комірку з тілом повідомлення для взяття кредиту
         // Создаем ячейку с телом сообщения для взятия кредита
         // Create cell with message body for taking a loan
@@ -349,39 +224,8 @@ public class DeFiContracts extends Contract {
         bodyBuilder.storeCoins(loanAmount);
         
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
+        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
     }
     
     /**
@@ -390,11 +234,11 @@ public class DeFiContracts extends Contract {
      * Погасить кредит
      * 
      * @param repaymentAmount кількість токенів для погашення
-     * @param lendingWalletAddress адреса кошелька кредитування
-     * @param privateKey приватний ключ для підпису
+     * @param wallet гаманець V3/V4, який надсилає внутрішнє повідомлення і сплачує газ
+     * @param privateKey приватний ключ гаманця
      * @throws IOException якщо сталася помилка мережі
      */
-    public void repayLoan(BigInteger repaymentAmount, Address lendingWalletAddress,
+    public void repayLoan(BigInteger repaymentAmount, Wallet wallet,
                          Crypto.PrivateKey privateKey) throws IOException {
         // Створюємо комірку з тілом повідомлення для погашення кредиту
         // Создаем ячейку с телом сообщения для погашения кредита
@@ -417,38 +261,7 @@ public class DeFiContracts extends Contract {
         bodyBuilder.storeCoins(repaymentAmount);
         
         Cell body = bodyBuilder.build();
-        
-        // Створюємо зовнішнє повідомлення
-        // Создаем внешнее сообщение
-        // Create external message
-        CellBuilder messageBuilder = new CellBuilder();
-        
-        // Створюємо BOC для повідомлення
-        // Создаем BOC для сообщения
-        // Create BOC for message
-        Boc boc = new Boc(body);
-        byte[] messageBytes = boc.serialize(true, true);
-        
-        // Підписуємо повідомлення приватним ключем
-        // Подписываем сообщение приватным ключом
-        // Sign message with private key
-        byte[] signature = Crypto.sign(privateKey, messageBytes);
-        
-        // Створюємо зовнішнє повідомлення з підписом
-        // Создаем внешнее сообщение с подписью
-        // Create external message with signature
-        messageBuilder.storeBytes(signature);
-        messageBuilder.storeRef(body);
-        
-        Cell message = messageBuilder.build();
-        
-        // Надсилаємо повідомлення через API
-        // Отправляем сообщение через API
-        // Send message through API
-        if (apiClient != null) {
-            apiClient.sendBoc(messageBytes);
-        } else {
-            throw new IOException("API client not set");
-        }
+        // Пул не приймає external-in. Опкод іде внутрішнім повідомленням з гаманця.
+        sendThroughWallet(wallet, this.address, body, DEFAULT_ATTACHED_TON, privateKey);
     }
 }

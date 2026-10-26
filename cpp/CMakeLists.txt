@@ -5,18 +5,32 @@ cmake_minimum_required(VERSION 3.22)
 
 project(cton-sdk-core)
 set(CMAKE_CXX_STANDARD 17)
+# OpenSSL is built no-shared, which uses the static CRT (/MT).
+set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 # Handle Cyrillic characters in path
 cmake_policy(SET CMP0049 NEW)
 
-# Add source files
-file(GLOB_RECURSE SOURCES "src/*.cpp")
-file(GLOB_RECURSE HEADERS "include/*.h" "include/*.hpp")
-
-# Exclude main.cpp and test files from library sources
-list(FILTER SOURCES EXCLUDE REGEX "main.cpp")
-list(FILTER SOURCES EXCLUDE REGEX "test")
-list(FILTER SOURCES EXCLUDE REGEX "demo.cpp")
+# Listed explicitly: GLOB returns nothing when the project path contains
+# characters outside the system ANSI code page.
+set(SOURCES
+    src/Address.cpp
+    src/Boc.cpp
+    src/Cell.cpp
+    src/Crypto.cpp
+    src/Mnemonic.cpp
+    src/NativeInterface.cpp
+    src/Slice.cpp
+)
+set(HEADERS
+    include/Address.h
+    include/Boc.h
+    include/Cell.h
+    include/Crypto.h
+    include/Mnemonic.h
+    include/NativeInterface.h
+    include/Slice.h
+)
 
 # Create library
 add_library(cton-sdk-core SHARED ${SOURCES} ${HEADERS})
@@ -44,31 +58,37 @@ target_include_directories(cton-sdk-core PUBLIC
 # Find OpenSSL with more flexible options
 set(OPENSSL_USE_STATIC_LIBS TRUE)
 
-# First try to find OpenSSL in the project directory
-if(EXISTS "${CMAKE_SOURCE_DIR}/../openssl")
-    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl")
-    message(STATUS "Looking for OpenSSL in project directory: ${OPENSSL_ROOT_DIR}")
-    find_package(OpenSSL QUIET)
+# OpenSSL 4.1.0 (23 Oct 2026). vcpkg port is still 3.6.x, so a local build wins.
+# The source tree is openssl-4.1.0; nmake install lands in openssl-4.1.0-dist.
+if(EXISTS "${CMAKE_SOURCE_DIR}/../openssl-4.1.0-dist")
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-4.1.0-dist")
+    message(STATUS "Looking for OpenSSL 4.1.0 in: ${OPENSSL_ROOT_DIR}")
+    find_package(OpenSSL 4.1 QUIET)
 endif()
 
-# If not found, try the versioned directory
-if(NOT OpenSSL_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
-    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-3.6.0")
-    message(STATUS "Looking for OpenSSL in versioned directory: ${OPENSSL_ROOT_DIR}")
-    find_package(OpenSSL QUIET)
+if(NOT OpenSSL_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/../openssl-4.1.0/lib")
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl-4.1.0")
+    message(STATUS "Looking for OpenSSL 4.1.0 in: ${OPENSSL_ROOT_DIR}")
+    find_package(OpenSSL 4.1 QUIET)
+endif()
+
+if(NOT OpenSSL_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/../openssl")
+    set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../openssl")
+    message(STATUS "Looking for OpenSSL in project directory: ${OPENSSL_ROOT_DIR}")
+    find_package(OpenSSL 4.1 QUIET)
 endif()
 
 # If still not found, try to find it in vcpkg installation
 if(NOT OpenSSL_FOUND AND EXISTS "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
     set(OPENSSL_ROOT_DIR "${CMAKE_SOURCE_DIR}/../vcpkg/installed/x64-windows")
     message(STATUS "Looking for OpenSSL in vcpkg directory: ${OPENSSL_ROOT_DIR}")
-    find_package(OpenSSL QUIET)
+    find_package(OpenSSL 4.1 QUIET)
 endif()
 
-# If still not found, try system locations
+# If still not found, try system locations. 3.6 is not accepted.
 if(NOT OpenSSL_FOUND)
-    message(STATUS "Looking for OpenSSL in system locations")
-    find_package(OpenSSL QUIET)
+    message(STATUS "Looking for OpenSSL 4.1 or newer in system locations")
+    find_package(OpenSSL 4.1 QUIET)
 endif()
 
 # Link OpenSSL libraries
@@ -92,7 +112,7 @@ if(OPENSSL_FOUND)
     message(STATUS "Using OpenSSL version: ${OPENSSL_VERSION}")
     message(STATUS "Using OpenSSL include dirs: ${OpenSSL_INCLUDE_DIRS}")
 else()
-    message(FATAL_ERROR "OpenSSL libraries not found. OpenSSL is required for cryptographic operations.")
+    message(FATAL_ERROR "OpenSSL 4.1 or newer was not found. vcpkg still packages 3.6.x. Build openssl-4.1.0 with Perl and NASM (perl Configure VC-WIN64A no-shared --prefix=<repo>/../openssl-4.1.0) and point OPENSSL_ROOT_DIR there.")
 endif()
 
 target_include_directories(cton-sdk-test PUBLIC 

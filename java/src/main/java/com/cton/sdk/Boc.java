@@ -4,6 +4,7 @@
 package com.cton.sdk;
 
 import java.io.Closeable;
+import java.lang.ref.Cleaner;
 
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -50,12 +51,17 @@ public class Boc implements Closeable {
     
     private Pointer nativeBoc;
     private boolean closed = false;
+    private final Cleaner.Cleanable cleanable;
     
     /**
      * Конструктор за замовчуванням
      */
     public Boc() {
         this.nativeBoc = CtonLibrary.INSTANCE.boc_create();
+        if (this.nativeBoc == null) {
+            throw new OutOfMemoryError("boc_create failed");
+        }
+        this.cleanable = NativeResources.track(this, nativeBoc, CtonLibrary.INSTANCE::boc_destroy);
     }
     
     /**
@@ -64,6 +70,10 @@ public class Boc implements Closeable {
      */
     public Boc(Cell root) {
         this.nativeBoc = CtonLibrary.INSTANCE.boc_create_with_root(root.nativeCell);
+        if (this.nativeBoc == null) {
+            throw new IllegalArgumentException("Failed to create BOC from root cell");
+        }
+        this.cleanable = NativeResources.track(this, nativeBoc, CtonLibrary.INSTANCE::boc_destroy);
     }
     
     /**
@@ -71,6 +81,9 @@ public class Boc implements Closeable {
      */
     Boc(Pointer nativeBoc) {
         this.nativeBoc = nativeBoc;
+        this.cleanable = nativeBoc == null
+            ? null
+            : NativeResources.track(this, nativeBoc, CtonLibrary.INSTANCE::boc_destroy);
     }
     
     /**
@@ -112,6 +125,9 @@ public class Boc implements Closeable {
      */
     public static Boc deserialize(byte[] data) {
         Pointer bocPtr = CtonLibrary.INSTANCE.boc_deserialize(data, data.length);
+        if (bocPtr == null) {
+            throw new IllegalArgumentException("Failed to deserialize BOC");
+        }
         return new Boc(bocPtr);
     }
     
@@ -143,10 +159,13 @@ public class Boc implements Closeable {
      */
     @Override
     public void close() {
-        if (!closed && nativeBoc != null) {
-            CtonLibrary.INSTANCE.boc_destroy(nativeBoc);
-            nativeBoc = null;
-            closed = true;
+        if (closed) {
+            return;
+        }
+        closed = true;
+        nativeBoc = null;
+        if (cleanable != null) {
+            cleanable.clean();
         }
     }
 }

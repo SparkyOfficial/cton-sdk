@@ -11,6 +11,7 @@ import java.util.Date;
 
 import com.cton.api.TonApiClient;
 import com.cton.contract.JettonExtensions;
+import com.cton.contract.WalletV4;
 import com.cton.sdk.Address;
 import com.cton.sdk.Crypto;
 
@@ -51,19 +52,11 @@ public class JettonExtensionsExample {
             // Create private key (for example)
             Crypto.PrivateKey privateKey = Crypto.PrivateKey.generate();
             
-            // Адреса кошелька відправника
-            // Адрес кошелька отправителя
-            // Sender wallet address
-            Address senderWallet = new Address("EQCD39VS5jcptHL8vMjEXrzGaRcCVYto7HUn4bpAOg8xqB2N");
+            // Гаманець власника. Переказ жетона йде через нього внутрішнім повідомленням.
+            WalletV4 senderWallet = new WalletV4(userAddress, apiClient);
             
-            // Адреса одержувача
-            // Адрес получателя
-            // Recipient address
             Address recipient = new Address("Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM");
             
-            // Безкомісійний переказ
-            // Бесплатный перевод
-            // Feeless transfer
             jetton.feelessTransfer(senderWallet, recipient, BigInteger.valueOf(1000), privateKey);
             System.out.println("Feeless transfer completed");
             
@@ -75,7 +68,7 @@ public class JettonExtensionsExample {
             Date cliffDate = new Date(startDate.getTime() + 30L * 24 * 60 * 60 * 1000); // 30 днів
             
             Address beneficiary = new Address("Ef8zMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzMzM");
-            jetton.createVestingSchedule(beneficiary, BigInteger.valueOf(1000000), 
+            jetton.createVestingSchedule(senderWallet, beneficiary, BigInteger.valueOf(1000000),
                                        startDate, endDate, cliffDate, privateKey);
             System.out.println("Vesting schedule created");
             
@@ -83,7 +76,7 @@ public class JettonExtensionsExample {
             // Голосование за предложение governance
             // Vote on governance proposal
             long proposalId = 12345;
-            jetton.voteOnProposal(proposalId, true, senderWallet, privateKey);
+            jetton.voteOnProposal(senderWallet, proposalId, true, privateKey);
             System.out.println("Voted on proposal #" + proposalId);
             
             // Отримання інформації про пропозицію

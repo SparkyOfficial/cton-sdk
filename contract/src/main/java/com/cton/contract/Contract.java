@@ -12,6 +12,7 @@ import com.cton.api.TonApiClient;
 import com.cton.sdk.Address;
 import com.cton.sdk.Cell;
 import com.cton.sdk.CellBuilder;
+import com.cton.sdk.Crypto;
 import com.google.gson.JsonObject;
 
 /**
@@ -21,6 +22,9 @@ import com.google.gson.JsonObject;
  * Базовый класс для работы с TON контрактами
  */
 public abstract class Contract {
+    /** 0.05 TON. Гаманець прикріплює цю суму до внутрішнього повідомлення як газ. */
+    public static final BigInteger DEFAULT_ATTACHED_TON = BigInteger.valueOf(50_000_000L);
+
     protected final Address address;
     protected final TonApiClient apiClient;
     
@@ -86,6 +90,25 @@ public abstract class Contract {
         
         // Надсилаємо через API
         apiClient.sendBoc(bocBytes);
+    }
+
+    /**
+     * Доставити тіло операції у контракт внутрішнім повідомленням через гаманець користувача.
+     * Зовнішнє повідомлення адресоване гаманцю. Контракт бачить лише internal message.
+     *
+     * @param wallet гаманець V3/V4, який підписує транзакцію і сплачує газ
+     * @param destination контракт-отримувач внутрішнього повідомлення
+     * @param body пейлоад з опкодом операції
+     * @param tonAmount прикріплені нанотони
+     * @param privateKey ключ гаманця
+     */
+    protected void sendThroughWallet(Wallet wallet, Address destination, Cell body,
+                                     BigInteger tonAmount, Crypto.PrivateKey privateKey) throws IOException {
+        if (wallet == null) {
+            throw new IOException(
+                "User wallet is required. Jetton, NFT and DeFi contracts accept only internal messages");
+        }
+        wallet.sendInternalMessage(destination, tonAmount, body, privateKey);
     }
     
     /**

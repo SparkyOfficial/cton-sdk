@@ -10,6 +10,7 @@
 #include "Address.h"
 #include "Crypto.h"
 #include "Boc.h"
+#include "Slice.h"
 
 // Export definitions for Windows DLL
 #ifdef _WIN32
@@ -34,6 +35,22 @@ extern "C" {
     CTON_SDK_CORE_API int cell_get_bit_size(void* cell);
     CTON_SDK_CORE_API int cell_get_refs_count(void* cell);
     CTON_SDK_CORE_API void* cell_get_ref(void* cell, int index);
+    // Representation hash комірки (sha256 d1 d2 | data | depths | ref hashes)
+    CTON_SDK_CORE_API bool cell_representation_hash(void* cell, uint8_t* out, int outLen);
+
+    // Slice: курсор читання комірки. Усі покажчики, які повертаються, належать викликачу.
+    CTON_SDK_CORE_API void* slice_from_cell(void* cell);
+    CTON_SDK_CORE_API void slice_destroy(void* slice);
+    CTON_SDK_CORE_API bool slice_load_uint(void* slice, int bits, uint64_t* out);
+    CTON_SDK_CORE_API bool slice_load_int(void* slice, int bits, int64_t* out);
+    CTON_SDK_CORE_API int slice_load_bytes(void* slice, int len, uint8_t* out, int outLen);
+    // 1 — адреса записана в *out (new Address), 0 — addr_none, -1 — помилка
+    CTON_SDK_CORE_API int slice_load_address(void* slice, void** out);
+    // Довжина big-endian magnitude; 0 означає нуль монет; -1 — помилка
+    CTON_SDK_CORE_API int slice_load_coins(void* slice, uint8_t* out, int outLen);
+    CTON_SDK_CORE_API void* slice_load_ref(void* slice);
+    CTON_SDK_CORE_API int slice_remaining_bits(void* slice);
+    CTON_SDK_CORE_API int slice_remaining_refs(void* slice);
 
     // Address functions
     CTON_SDK_CORE_API void* address_create();
@@ -89,6 +106,11 @@ extern "C" {
     CTON_SDK_CORE_API char** crypto_generate_mnemonic();
     CTON_SDK_CORE_API void* crypto_mnemonic_to_private_key(char** mnemonic);
     CTON_SDK_CORE_API void* crypto_chacha20_encrypt(const uint8_t* data, int dataLen, const uint8_t* key, const uint8_t* nonce);
+
+    // TON mnemonic (сумісність з Tonkeeper/MyTonWallet/Telegram Wallet)
+    CTON_SDK_CORE_API char** mnemonic_generate_ton(int wordCount);
+    CTON_SDK_CORE_API bool mnemonic_is_valid_ton(char** mnemonic);
+    CTON_SDK_CORE_API int mnemonic_to_ton_seed(char** mnemonic, uint8_t* out, int outLen);
 
     // BOC functions
     CTON_SDK_CORE_API void* boc_create();

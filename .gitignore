@@ -7,12 +7,15 @@ vcpkg/scripts/buildsystems/tmp/
 vcpkg/vcpkg
 vcpkg/vcpkg.exe
 
-# OpenSSL (if downloaded manually)
+# OpenSSL source and the local 4.1.0 build (not part of the SDK)
 openssl-*
+/openssl-4.1.0/
+/openssl-4.1.0-dist/
 
 
 # Build output directories
 cpp/build/
+cpp/build-msvc/
 cpp/cmake-build*/
 */target/
 */bin/

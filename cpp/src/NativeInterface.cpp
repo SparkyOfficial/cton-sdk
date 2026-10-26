@@ -8,6 +8,8 @@
 #include "../include/Address.h"
 #include "../include/Crypto.h"
 #include "../include/Boc.h"
+#include "../include/Slice.h"
+#include "../include/Mnemonic.h"
 #include <cstring>
 #include <cstdlib>
 #include <stdexcept>
@@ -129,8 +131,8 @@ bool cell_store_ref(void* cell, void* refCell) {
     }
     
     try {
-        // Convert void* to shared_ptr<Cell>
-        std::shared_ptr<Cell> ref(static_cast<Cell*>(refCell));
+        // Копія, а не усиновлення вказівника: Java-об'єкт лишається власником оригіналу.
+        std::shared_ptr<Cell> ref = static_cast<Cell*>(refCell)->clone();
         static_cast<Cell*>(cell)->addReference(ref);
         return true;
     } catch (const std::exception&) {
@@ -211,14 +213,163 @@ void* cell_get_ref(void* cell, int index) {
             return nullptr;
         }
         
-        // Return the raw pointer to the Cell object
-        return ref.get();
+        // Окрема копія: Java може знищити її, не чіпаючи дерево батька.
+        auto cloned = ref->clone();
+        return new Cell(*cloned);
     } catch (const std::exception&) {
         // Handle standard exceptions
         return nullptr;
     } catch (...) {
         // Handle any other unexpected exceptions
         return nullptr;
+    }
+}
+
+bool cell_representation_hash(void* cell, uint8_t* out, int outLen) {
+    if (!cell || !out || outLen < 32) {
+        return false;
+    }
+    
+    try {
+        auto hash = static_cast<Cell*>(cell)->representationHash();
+        if (hash.size() != 32) {
+            return false;
+        }
+        std::memcpy(out, hash.data(), 32);
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+void* slice_from_cell(void* cell) {
+    if (!cell) {
+        return nullptr;
+    }
+    try {
+        return new Slice(*static_cast<Cell*>(cell));
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+void slice_destroy(void* slice) {
+    if (slice) {
+        try {
+            delete static_cast<Slice*>(slice);
+        } catch (...) {
+        }
+    }
+}
+
+bool slice_load_uint(void* slice, int bits, uint64_t* out) {
+    if (!slice || !out || bits < 0) {
+        return false;
+    }
+    try {
+        *out = static_cast<Slice*>(slice)->loadUInt(static_cast<size_t>(bits));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+bool slice_load_int(void* slice, int bits, int64_t* out) {
+    if (!slice || !out || bits <= 0) {
+        return false;
+    }
+    try {
+        *out = static_cast<Slice*>(slice)->loadInt(static_cast<size_t>(bits));
+        return true;
+    } catch (...) {
+        return false;
+    }
+}
+
+int slice_load_bytes(void* slice, int len, uint8_t* out, int outLen) {
+    if (!slice || len < 0 || (len > 0 && (!out || outLen < len))) {
+        return -1;
+    }
+    try {
+        auto bytes = static_cast<Slice*>(slice)->loadBytes(static_cast<size_t>(len));
+        if (len > 0) {
+            std::memcpy(out, bytes.data(), static_cast<size_t>(len));
+        }
+        return len;
+    } catch (...) {
+        return -1;
+    }
+}
+
+int slice_load_address(void* slice, void** out) {
+    if (!slice || !out) {
+        return -1;
+    }
+    *out = nullptr;
+    try {
+        auto address = static_cast<Slice*>(slice)->loadAddress();
+        if (!address) {
+            return 0;
+        }
+        *out = new Address(*address);
+        return 1;
+    } catch (...) {
+        return -1;
+    }
+}
+
+int slice_load_coins(void* slice, uint8_t* out, int outLen) {
+    if (!slice || !out || outLen < 0) {
+        return -1;
+    }
+    try {
+        auto coins = static_cast<Slice*>(slice)->loadCoins();
+        if (static_cast<int>(coins.size()) > outLen) {
+            return -1;
+        }
+        if (!coins.empty()) {
+            std::memcpy(out, coins.data(), coins.size());
+        }
+        return static_cast<int>(coins.size());
+    } catch (...) {
+        return -1;
+    }
+}
+
+void* slice_load_ref(void* slice) {
+    if (!slice) {
+        return nullptr;
+    }
+    try {
+        auto ref = static_cast<Slice*>(slice)->loadRef();
+        if (!ref) {
+            return nullptr;
+        }
+        return new Cell(*ref);
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+int slice_remaining_bits(void* slice) {
+    if (!slice) {
+        return -1;
+    }
+    try {
+        return static_cast<int>(static_cast<Slice*>(slice)->remainingBits());
+    } catch (...) {
+        return -1;
+    }
+}
+
+int slice_remaining_refs(void* slice) {
+    if (!slice) {
+        return -1;
+    }
+    try {
+        return static_cast<int>(static_cast<Slice*>(slice)->remainingRefs());
+    } catch (...) {
+        return -1;
     }
 }
 
@@ -829,6 +980,59 @@ void* crypto_mnemonic_to_private_key(char** mnemonic) {
     }
 }
 
+// TON mnemonic exports (сумісність з Tonkeeper/MyTonWallet/Telegram Wallet)
+static std::vector<std::string> cstr_array_to_vector(char** arr) {
+    std::vector<std::string> v;
+    if (!arr) {
+        return v;
+    }
+    for (int i = 0; arr[i] != nullptr; ++i) {
+        v.push_back(std::string(arr[i]));
+    }
+    return v;
+}
+
+char** mnemonic_generate_ton(int wordCount) {
+    try {
+        auto words = Mnemonic::generateTon(wordCount);
+        char** result = (char**)malloc(sizeof(char*) * (words.size() + 1));
+        if (!result) {
+            return nullptr;
+        }
+        for (size_t i = 0; i < words.size(); ++i) {
+            result[i] = string_to_cstr(words[i]);
+        }
+        result[words.size()] = nullptr;
+        return result;
+    } catch (...) {
+        return nullptr;
+    }
+}
+
+bool mnemonic_is_valid_ton(char** mnemonic) {
+    try {
+        return Mnemonic::isValidTon(cstr_array_to_vector(mnemonic));
+    } catch (...) {
+        return false;
+    }
+}
+
+int mnemonic_to_ton_seed(char** mnemonic, uint8_t* out, int outLen) {
+    if (!out || outLen < 64) {
+        return -1;
+    }
+    try {
+        auto seed = Mnemonic::toTonSeed(cstr_array_to_vector(mnemonic));
+        if (seed.size() != 64) {
+            return -1;
+        }
+        std::memcpy(out, seed.data(), 64);
+        return 64;
+    } catch (...) {
+        return -1;
+    }
+}
+
 // BOC functions
 void* boc_create() {
     try {
@@ -848,9 +1052,7 @@ void* boc_create_with_root(void* rootCell) {
     }
     
     try {
-        // Convert void* to shared_ptr<Cell>
-        std::shared_ptr<Cell> cell(static_cast<Cell*>(rootCell));
-        // Create a new Boc object with the root cell
+        std::shared_ptr<Cell> cell = static_cast<Cell*>(rootCell)->clone();
         return new Boc(cell);
     } catch (const std::bad_alloc&) {
         // Handle memory allocation failure
@@ -936,15 +1138,9 @@ void* boc_get_root(void* boc) {
     
     try {
         std::shared_ptr<Cell> root = static_cast<Boc*>(boc)->getRoot();
-        // Create a new Cell object that's a copy of the root cell
-        // This ensures proper memory management
         if (root) {
-            std::vector<uint8_t> data = root->getData();
-            size_t bitSize = root->getBitSize();
-            
-            // Create a new cell with the same data
-            Cell* newCell = new Cell(data, bitSize, std::vector<std::shared_ptr<Cell>>(), root->isSpecial());
-            return newCell;
+            auto cloned = root->clone();
+            return new Cell(*cloned);
         }
         return nullptr;
     } catch (const std::bad_alloc&) {
@@ -962,8 +1158,7 @@ void boc_set_root(void* boc, void* rootCell) {
     }
     
     try {
-        // Convert void* to shared_ptr<Cell>
-        std::shared_ptr<Cell> cell(static_cast<Cell*>(rootCell));
+        std::shared_ptr<Cell> cell = static_cast<Cell*>(rootCell)->clone();
         static_cast<Boc*>(boc)->setRoot(cell);
     } catch (...) {
         // Нічого не робимо
